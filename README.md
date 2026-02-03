@@ -53,6 +53,8 @@ const program = new Program(IDL as GlowVault, provider);
 
 ### Fetch a Single Vault
 
+There is a "Glow Solana" vault that accepts devnet SOL, which you can test with. Its address is `5gyBqq1Lfv8ArywZK2raQQephSrsbc7mVUjLWm9QnZbk`.
+
 ```typescript
 import { fetchVault, fetchVaultNullable } from 'glow-vaults-sdk';
 
