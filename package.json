@@ -1,23 +1,26 @@
 {
-  "name": "glow-vaults-sdk",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "node --import tsx --test ./tests/fetchVaults.test.ts"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.4.1",
-  "dependencies": {
-    "@coral-xyz/anchor": "^0.32.1",
-    "@solana/spl-token": "^0.4.14",
-    "@solana/web3.js": "^1.98.4",
-    "bs58": "^6.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^25.2.0",
-    "tsx": "^4.19.0"
-  }
+    "name": "glow-vaults-sdk",
+    "version": "1.0.0",
+    "description": "",
+    "type": "module",
+    "scripts": {
+        "test": "node --import tsx --test",
+        "format": "prettier --cache --write .",
+        "typecheck": "tsc --noEmit"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@coral-xyz/anchor": "^0.32.1",
+        "@solana/spl-token": "^0.4.14",
+        "@solana/web3.js": "^1.98.4",
+        "bs58": "^6.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "^25.2.0",
+        "tsx": "^4.19.0",
+        "prettier": "^3.6.2"
+    },
+    "packageManager": "pnpm@10.22.0+sha512.bf049efe995b28f527fd2b41ae0474ce29186f7edcb3bf545087bd61fbbebb2bf75362d1307fda09c2d288e1e499787ac12d4fcb617a974718a6051f2eee741c"
 }

@@ -42,25 +42,22 @@ export type VaultAccount = Awaited<ReturnType<Program<GlowVault>['account']['vau
 export type Vault = {
     address: PublicKey;
     account: VaultAccount;
-}
+};
 /**
  * Fetch a vault account by its address.
- * 
+ *
  * @param program - The Anchor program instance for GlowVault
  * @param address - The public key of the vault account to fetch
  * @returns The decoded vault account data
  * @throws If the account doesn't exist or cannot be decoded
- * 
+ *
  * @example
  * ```ts
  * const vault = await fetchVault(program, vaultAddress);
  * console.log(vault.shareMint.toBase58());
  * ```
  */
-export async function fetchVault(
-    program: Program<GlowVault>,
-    address: Address,
-): Promise<Vault> {
+export async function fetchVault(program: Program<GlowVault>, address: Address): Promise<Vault> {
     const account = await program.account.vault.fetch(translateAddress(address));
     return {
         address: translateAddress(address),
@@ -70,11 +67,11 @@ export async function fetchVault(
 
 /**
  * Fetch a vault account by its address, returning null if not found.
- * 
+ *
  * @param program - The Anchor program instance for GlowVault
  * @param address - The public key of the vault account to fetch
  * @returns The decoded vault account data, or null if not found
- * 
+ *
  * @example
  * ```ts
  * const vault = await fetchVaultNullable(program, vaultAddress);
@@ -83,10 +80,7 @@ export async function fetchVault(
  * }
  * ```
  */
-export async function fetchVaultNullable(
-    program: Program<GlowVault>,
-    address: Address,
-): Promise<Vault | null> {
+export async function fetchVaultNullable(program: Program<GlowVault>, address: Address): Promise<Vault | null> {
     const account = await program.account.vault.fetchNullable(translateAddress(address));
     if (!account) {
         return null;
@@ -99,10 +93,10 @@ export async function fetchVaultNullable(
 
 /**
  * Fetch all vault accounts.
- * 
+ *
  * @param program - The Anchor program instance for GlowVault
  * @returns An array of all vault accounts with their public keys
- * 
+ *
  * @example
  * ```ts
  * const vaults = await fetchAllVaults(program);
@@ -111,14 +105,15 @@ export async function fetchVaultNullable(
  * }
  * ```
  */
-export async function fetchAllVaults(
-    program: Program<GlowVault>,
-): Promise<Vault[]> {
+export async function fetchAllVaults(program: Program<GlowVault>): Promise<Vault[]> {
     const accounts = await program.account.vault.all();
-    return accounts.map(({ publicKey, account: accountData }) => ({
-        address: publicKey,
-        account: accountData,
-    } as Vault));
+    return accounts.map(
+        ({ publicKey, account: accountData }) =>
+            ({
+                address: publicKey,
+                account: accountData,
+            }) as Vault,
+    );
 }
 
 /**
@@ -135,7 +130,7 @@ function deriveAssociatedTokenAddress(mint: Address, tokenProgram: Address, owne
 interface Programs {
     connection: Connection;
     glowVault: Program<GlowVault>;
-} 
+}
 
 /**
  * Deposit from a wallet into the LRT pool.
@@ -326,7 +321,11 @@ export async function withExecuteVaultWithdrawal({
         vault,
     });
     const shareMint = deriveVaultShareMint(vault.address);
-    const associatedTokenAccount = deriveAssociatedTokenAddress(vault.account.underlyingMint, vault.account.underlyingMintTokenProgram, withdrawer);
+    const associatedTokenAccount = deriveAssociatedTokenAddress(
+        vault.account.underlyingMint,
+        vault.account.underlyingMintTokenProgram,
+        withdrawer,
+    );
     instructions.push(
         createAssociatedTokenAccountIdempotentInstruction(
             withdrawer,
