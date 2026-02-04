@@ -23,7 +23,7 @@ await withVaultWalletDeposit({
     program,
     vault,
     depositor: wallet.publicKey,
-    instructions,  // <-- instructions get pushed here
+    instructions, // <-- instructions get pushed here
     amount: new BN(1_000_000),
 });
 
