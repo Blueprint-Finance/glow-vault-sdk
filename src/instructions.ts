@@ -15,7 +15,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { translateAddress } from '@coral-xyz/anchor';
 import {
     ASSOCIATED_TOKEN_PROGRAM_ID,
     createAssociatedTokenAccountIdempotentInstruction,
@@ -26,95 +25,16 @@ import {
 } from '@solana/spl-token';
 import { PublicKey, SystemProgram } from '@solana/web3.js';
 
+import { translateAddress } from '@coral-xyz/anchor';
 import type { Address, BN, Program } from '@coral-xyz/anchor';
 import type { Connection, TransactionInstruction } from '@solana/web3.js';
 import type { GlowVault } from './idls/glow_vault';
+import type { Vault } from './state';
 
 import { deriveVaultPendingWithdrawals, deriveVaultShareMint, deriveVaultUser } from './pda';
 import { findDerivedAccount } from './utils';
 
-/**
- * The raw vault account data as decoded from the IDL.
- * Use this type when working directly with fetched account data.
- */
-export type VaultAccount = Awaited<ReturnType<Program<GlowVault>['account']['vault']['fetch']>>;
-
-export type Vault = {
-    address: PublicKey;
-    account: VaultAccount;
-};
-/**
- * Fetch a vault account by its address.
- *
- * @param program - The Anchor program instance for GlowVault
- * @param address - The public key of the vault account to fetch
- * @returns The decoded vault account data
- * @throws If the account doesn't exist or cannot be decoded
- *
- * @example
- * ```ts
- * const vault = await fetchVault(program, vaultAddress);
- * console.log(vault.shareMint.toBase58());
- * ```
- */
-export async function fetchVault(program: Program<GlowVault>, address: Address): Promise<Vault> {
-    const account = await program.account.vault.fetch(translateAddress(address));
-    return {
-        address: translateAddress(address),
-        account,
-    };
-}
-
-/**
- * Fetch a vault account by its address, returning null if not found.
- *
- * @param program - The Anchor program instance for GlowVault
- * @param address - The public key of the vault account to fetch
- * @returns The decoded vault account data, or null if not found
- *
- * @example
- * ```ts
- * const vault = await fetchVaultNullable(program, vaultAddress);
- * if (vault) {
- *     console.log(vault.shareMint.toBase58());
- * }
- * ```
- */
-export async function fetchVaultNullable(program: Program<GlowVault>, address: Address): Promise<Vault | null> {
-    const account = await program.account.vault.fetchNullable(translateAddress(address));
-    if (!account) {
-        return null;
-    }
-    return {
-        address: translateAddress(address),
-        account,
-    };
-}
-
-/**
- * Fetch all vault accounts.
- *
- * @param program - The Anchor program instance for GlowVault
- * @returns An array of all vault accounts with their public keys
- *
- * @example
- * ```ts
- * const vaults = await fetchAllVaults(program);
- * for (const { publicKey, account } of vaults) {
- *     console.log(`Vault ${publicKey.toBase58()}: ${account.shareMint.toBase58()}`);
- * }
- * ```
- */
-export async function fetchAllVaults(program: Program<GlowVault>): Promise<Vault[]> {
-    const accounts = await program.account.vault.all();
-    return accounts.map(
-        ({ publicKey, account: accountData }) =>
-            ({
-                address: publicKey,
-                account: accountData,
-            }) as Vault,
-    );
-}
+export * from './state';
 
 /**
  * Derive the associated token address for a given mint, token program, and owner.
@@ -154,7 +74,7 @@ export async function withVaultWalletDeposit({
 }) {
     const shareMint = deriveVaultShareMint(vault.address);
     // If the underlying mint is SOL, wrap tokens first
-    if (vault.account.underlyingMint === NATIVE_MINT) {
+    if (vault.account.underlyingMint.equals(NATIVE_MINT)) {
         wrapSol(depositor, amount, instructions);
     }
     const vaultUser = deriveVaultUser(vault.address, depositor);
