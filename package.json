@@ -4,7 +4,7 @@
     "description": "",
     "type": "module",
     "scripts": {
-        "test": "node --import tsx --test",
+        "test": "node scripts/run-tests.mjs",
         "format": "prettier --cache --write .",
         "typecheck": "tsc --noEmit"
     },
@@ -15,10 +15,12 @@
         "@coral-xyz/anchor": "^0.32.1",
         "@solana/spl-token": "^0.4.14",
         "@solana/web3.js": "^1.98.4",
+        "bn.js": "^5.2.2",
         "bs58": "^6.0.0"
     },
     "devDependencies": {
         "@types/node": "^25.2.0",
+        "typescript": "^5.4.5",
         "tsx": "^4.19.0",
         "prettier": "^3.6.2"
     },
