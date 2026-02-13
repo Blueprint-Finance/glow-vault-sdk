@@ -35,6 +35,7 @@ import { deriveVaultPendingWithdrawals, deriveVaultShareMint, deriveVaultUser } 
 import { findDerivedAccount } from './utils';
 
 export * from './state';
+export * from './apy';
 
 /**
  * Derive the associated token address for a given mint, token program, and owner.

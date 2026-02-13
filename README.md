@@ -65,6 +65,26 @@ const vault = await fetchVault(program, vaultAddress);
 const maybeVault = await fetchVaultNullable(program, vaultAddress);
 ```
 
+## APY (Off-Chain)
+
+APY is provided via an HTTP API (not derived from on-chain state).
+
+```typescript
+import { fetchVaultApy } from 'glow-vaults-sdk';
+
+const { apy, apyBps } = await fetchVaultApy(vaultAddress, {
+    endpoint: 'https://api.example.com/vaults/apy',
+});
+
+// `apy` is a decimal fraction: 0.12 == 12% APY
+console.log({ apy, apyBps });
+```
+
+Endpoint formats supported by default:
+
+- Path placeholder: `https://api.example.com/vaults/{vault}/apy`
+- Query param: `https://api.example.com/vaults/apy?vault=<vault>`
+
 ### Fetch All Vaults
 
 ```typescript
