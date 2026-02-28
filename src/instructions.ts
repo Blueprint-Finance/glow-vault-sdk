@@ -31,7 +31,14 @@ import type { Connection, TransactionInstruction } from '@solana/web3.js';
 import type { GlowVault } from './idls/glow_vault';
 import type { Vault } from './state';
 
-import { deriveVaultPendingWithdrawals, deriveVaultShareMint, deriveVaultUser } from './pda';
+import {
+    deriveVaultPendingDeposits,
+    deriveVaultPendingDepositsCustody,
+    deriveVaultPendingWithdrawals,
+    deriveVaultPendingWithdrawalsCustody,
+    deriveVaultShareMint,
+    deriveVaultUser,
+} from './pda';
 import { findDerivedAccount } from './utils';
 
 export * from './state';
@@ -329,6 +336,307 @@ export async function withUpdateVaultBalances({
             })
             .instruction(),
     );
+}
+
+const DEPOSIT_TIME_LOCK_ENABLED = 1 << 4;
+
+/**
+ * Deposit from a wallet into a transferable vault.
+ *
+ * Inspects the on-chain vault flags to determine whether deposits are time-locked.
+ * - Non-locked: shares are minted directly to the depositor's wallet ATA.
+ * - Locked: shares are escrowed in the vault's pending deposits custody account.
+ *   The depositor must later call `withClaimDepositedShares` to claim them.
+ */
+export async function withTransferableVaultDeposit({
+    program,
+    vault,
+    depositor,
+    instructions,
+    amount,
+}: {
+    program: Program<GlowVault>;
+    vault: Vault;
+    depositor: PublicKey;
+    instructions: TransactionInstruction[];
+    amount: BN;
+}) {
+    const vaultAccount = await program.account.vault.fetch(vault.address);
+    const isLocked = (Number(vaultAccount.flags) & DEPOSIT_TIME_LOCK_ENABLED) !== 0;
+
+    const shareMint = deriveVaultShareMint(vault.address);
+
+    if (vault.account.underlyingMint.equals(NATIVE_MINT)) {
+        wrapSol(depositor, amount, instructions);
+    }
+
+    let shareTokenAccount: PublicKey | null = null;
+    let pendingDeposits: PublicKey | null = null;
+    let vaultPendingDepositsCustody: PublicKey | null = null;
+
+    if (isLocked) {
+        pendingDeposits = deriveVaultPendingDeposits(vault.address, depositor);
+        vaultPendingDepositsCustody = deriveVaultPendingDepositsCustody(vault.address);
+    } else {
+        shareTokenAccount = deriveTransferableShareTokenAccount(vault, depositor);
+        const shareTokenAccountInfo = await program.provider.connection.getAccountInfo(shareTokenAccount);
+        if (!shareTokenAccountInfo) {
+            instructions.push(
+                createAssociatedTokenAccountIdempotentInstruction(
+                    depositor,
+                    shareTokenAccount,
+                    depositor,
+                    shareMint,
+                    TOKEN_2022_PROGRAM_ID,
+                    ASSOCIATED_TOKEN_PROGRAM_ID,
+                ),
+            );
+        }
+    }
+
+    await withUpdateVaultBalances({
+        program,
+        instructions,
+        vault,
+    });
+
+    instructions.push(
+        await program.methods
+            .depositToTransferableVault({
+                kind: { shiftBy: {} },
+                tokens: amount,
+            })
+            .accountsPartial({
+                payer: depositor,
+                depositor,
+                vault: vault.address,
+                shareMint,
+                underlyingMint: vault.account.underlyingMint,
+                depositorUnderlyingTokenAccount: deriveAssociatedTokenAddress(
+                    vault.account.underlyingMint,
+                    vault.account.underlyingMintTokenProgram,
+                    depositor,
+                ),
+                shareTokenAccount,
+                pendingDeposits,
+                vaultPendingDepositsCustody,
+                underlyingMintTokenProgram: vault.account.underlyingMintTokenProgram,
+                shareTokenProgram: TOKEN_2022_PROGRAM_ID,
+            })
+            .instruction(),
+    );
+}
+
+/**
+ * Claim escrowed shares from a time-locked deposit after the delivery lock expires.
+ *
+ * Only applicable to transferable vaults with DEPOSIT_TIME_LOCK_ENABLED.
+ */
+export async function withClaimDepositedShares({
+    program,
+    vault,
+    depositor,
+    instructions,
+    depositIndex,
+}: {
+    program: Program<GlowVault>;
+    vault: Vault;
+    depositor: PublicKey;
+    instructions: TransactionInstruction[];
+    depositIndex: number;
+}) {
+    const shareMint = deriveVaultShareMint(vault.address);
+    const shareTokenAccount = deriveTransferableShareTokenAccount(vault, depositor);
+
+    const shareTokenAccountInfo = await program.provider.connection.getAccountInfo(shareTokenAccount);
+    if (!shareTokenAccountInfo) {
+        instructions.push(
+            createAssociatedTokenAccountIdempotentInstruction(
+                depositor,
+                shareTokenAccount,
+                depositor,
+                shareMint,
+                TOKEN_2022_PROGRAM_ID,
+                ASSOCIATED_TOKEN_PROGRAM_ID,
+            ),
+        );
+    }
+
+    instructions.push(
+        await program.methods
+            .claimDepositedShares(depositIndex)
+            .accountsPartial({
+                depositor,
+                vault: vault.address,
+                pendingDeposits: deriveVaultPendingDeposits(vault.address, depositor),
+                shareMint,
+                shareTokenAccount,
+                vaultPendingDepositsCustody: deriveVaultPendingDepositsCustody(vault.address),
+                tokenProgram: TOKEN_2022_PROGRAM_ID,
+            })
+            .instruction(),
+    );
+}
+
+/**
+ * Initiate a withdrawal from a transferable vault.
+ *
+ * Shares are transferred from the user's wallet to the vault's pending
+ * withdrawals custody account. The user must later call
+ * `withExecuteTransferableVaultWithdrawal` after the waiting period.
+ */
+export async function withInitiateTransferableVaultWithdrawal({
+    program,
+    connection,
+    vault,
+    withdrawer,
+    instructions,
+    amount,
+}: {
+    program: Program<GlowVault>;
+    connection: Connection;
+    vault: Vault;
+    withdrawer: PublicKey;
+    instructions: TransactionInstruction[];
+    amount: BN;
+}) {
+    await withUpdateVaultBalances({
+        program,
+        instructions,
+        vault,
+    });
+
+    const pendingWithdrawals = deriveVaultPendingWithdrawals(vault.address, withdrawer);
+    const pendingWithdrawalsAccount = await connection.getAccountInfo(pendingWithdrawals);
+    if (!pendingWithdrawalsAccount) {
+        await withCreateVaultPendingWithdrawal({
+            program,
+            vault,
+            payer: withdrawer,
+            withdrawer,
+            instructions,
+        });
+    }
+
+    instructions.push(
+        await program.methods
+            .initiateTransferableVaultWithdrawal(amount)
+            .accountsPartial({
+                withdrawer,
+                vault: vault.address,
+                pendingWithdrawals,
+                shareMint: deriveVaultShareMint(vault.address),
+                shareTokenAccount: deriveTransferableShareTokenAccount(vault, withdrawer),
+                vaultPendingWithdrawalsCustody: deriveVaultPendingWithdrawalsCustody(vault.address),
+                tokenProgram: TOKEN_2022_PROGRAM_ID,
+            })
+            .instruction(),
+    );
+}
+
+/**
+ * Execute a pending withdrawal from a transferable vault.
+ *
+ * The destination ATA is created idempotently in case it was closed.
+ */
+export async function withExecuteTransferableVaultWithdrawal({
+    program,
+    vault,
+    withdrawer,
+    instructions,
+    withdrawalIndex,
+}: {
+    program: Program<GlowVault>;
+    vault: Vault;
+    withdrawer: PublicKey;
+    instructions: TransactionInstruction[];
+    withdrawalIndex: number;
+}) {
+    await withUpdateVaultBalances({
+        program,
+        instructions,
+        vault,
+    });
+
+    const associatedTokenAccount = deriveAssociatedTokenAddress(
+        vault.account.underlyingMint,
+        vault.account.underlyingMintTokenProgram,
+        withdrawer,
+    );
+    instructions.push(
+        createAssociatedTokenAccountIdempotentInstruction(
+            withdrawer,
+            associatedTokenAccount,
+            withdrawer,
+            vault.account.underlyingMint,
+            vault.account.underlyingMintTokenProgram,
+        ),
+    );
+
+    instructions.push(
+        await program.methods
+            .executeTransferableVaultWithdrawal(withdrawalIndex)
+            .accountsPartial({
+                withdrawer,
+                vault: vault.address,
+                shareMint: deriveVaultShareMint(vault.address),
+                underlyingMint: vault.account.underlyingMint,
+                vaultPendingWithdrawalsCustody: deriveVaultPendingWithdrawalsCustody(vault.address),
+                destinationUnderlyingTokenAccount: associatedTokenAccount,
+                mintTokenProgram: TOKEN_2022_PROGRAM_ID,
+                underlyingMintTokenProgram: vault.account.underlyingMintTokenProgram,
+            })
+            .instruction(),
+    );
+}
+
+/**
+ * Cancel a pending withdrawal from a transferable vault.
+ *
+ * Returns the escrowed shares to the user's wallet.
+ */
+export async function withCancelTransferableVaultPendingWithdrawal({
+    program,
+    vault,
+    owner,
+    instructions,
+    withdrawalIndex,
+}: {
+    program: Program<GlowVault>;
+    vault: Vault;
+    owner: PublicKey;
+    instructions: TransactionInstruction[];
+    withdrawalIndex: number;
+}) {
+    await withUpdateVaultBalances({
+        program,
+        instructions,
+        vault,
+    });
+
+    instructions.push(
+        await program.methods
+            .cancelTransferableVaultPendingWithdrawal(withdrawalIndex)
+            .accountsPartial({
+                withdrawer: owner,
+                vault: vault.address,
+                shareMint: deriveVaultShareMint(vault.address),
+                vaultPendingWithdrawalsCustody: deriveVaultPendingWithdrawalsCustody(vault.address),
+                destinationShareTokenAccount: deriveTransferableShareTokenAccount(vault, owner),
+                mintTokenProgram: TOKEN_2022_PROGRAM_ID,
+            })
+            .instruction(),
+    );
+}
+
+/**
+ * Derive the share token ATA for a transferable vault user.
+ * In transferable vaults, shares go directly to the user's wallet,
+ * not to a VaultUser PDA.
+ */
+export function deriveTransferableShareTokenAccount(vault: Vault, owner: PublicKey): PublicKey {
+    const shareMint = deriveVaultShareMint(vault.address);
+    return deriveAssociatedTokenAddress(shareMint, TOKEN_2022_PROGRAM_ID, owner);
 }
 
 /**

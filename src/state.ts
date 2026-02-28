@@ -22,7 +22,7 @@ import type { Address, Program } from '@coral-xyz/anchor';
 import type { PublicKey } from '@solana/web3.js';
 import type { GlowVault } from './idls/glow_vault';
 
-import { deriveVaultPendingWithdrawals, deriveVaultUser } from './pda';
+import { deriveVaultPendingDeposits, deriveVaultPendingWithdrawals, deriveVaultUser } from './pda';
 
 const ZERO = new BN(0);
 
@@ -51,6 +51,15 @@ export type PendingWithdrawalsAccount = Awaited<
 export type PendingWithdrawals = {
     address: PublicKey;
     account: PendingWithdrawalsAccount;
+};
+
+export type PendingDepositsAccount = Awaited<
+    ReturnType<Program<GlowVault>['account']['pendingDeposits']['fetch']>
+>;
+
+export type PendingDeposits = {
+    address: PublicKey;
+    account: PendingDepositsAccount;
 };
 
 export type VaultBalances = {
@@ -308,6 +317,41 @@ export async function fetchVaultPendingWithdrawalsNullable(
 ): Promise<PendingWithdrawals | null> {
     const address = deriveVaultPendingWithdrawals(vault, withdrawer);
     const account = await program.account.pendingWithdrawals.fetchNullable(address);
+    if (!account) {
+        return null;
+    }
+    return {
+        address,
+        account,
+    };
+}
+
+/**
+ * Fetch pending deposits for a depositor.
+ */
+export async function fetchVaultPendingDeposits(
+    program: Program<GlowVault>,
+    vault: Address,
+    depositor: Address,
+): Promise<PendingDeposits> {
+    const address = deriveVaultPendingDeposits(vault, depositor);
+    const account = await program.account.pendingDeposits.fetch(address);
+    return {
+        address,
+        account,
+    };
+}
+
+/**
+ * Fetch pending deposits for a depositor, returning null if missing.
+ */
+export async function fetchVaultPendingDepositsNullable(
+    program: Program<GlowVault>,
+    vault: Address,
+    depositor: Address,
+): Promise<PendingDeposits | null> {
+    const address = deriveVaultPendingDeposits(vault, depositor);
+    const account = await program.account.pendingDeposits.fetchNullable(address);
     if (!account) {
         return null;
     }

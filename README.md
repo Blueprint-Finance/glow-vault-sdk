@@ -189,9 +189,31 @@ type VaultAccount = {
     // Performance fees that can be withdrawn because they have been charged to the
     // user, and the user has withdrawn their funds after the fees were charged.
     realisedPerformanceFees: BN;
+    // --- Transferable vault fields ---
+    // Seconds before a depositor can receive their shares (delivery lock)
+    depositDeliveryLockPeriod: BN;
+    // Seconds before a depositor can redeem their shares (redemption lock)
+    depositRedemptionLockPeriod: BN;
+    // Length of one withdrawal epoch in seconds (0 if epoch withdrawals are disabled)
+    epochPeriodSeconds: number;
+    // How many seconds before epoch settlement to stop accepting new withdrawal requests
+    epochCutoffBeforeSettlementSeconds: number;
+    // Tokens earmarked for withdrawals whose yield is frozen at the initiation-time rate
+    reservedWithdrawalTokens: BN;
+    // Shares earmarked for those same frozen withdrawals
+    reservedWithdrawalShares: BN;
     reserved: number[];
 }
 ```
+
+The `flags` field is a bitfield that controls vault behaviour. The flags relevant to transferable vaults are:
+
+| Bit | Name | Description |
+| --- | --- | --- |
+| `1 << 3` | `SHARES_TRANSFERABLE` | Shares are freely transferable tokens held in user wallets |
+| `1 << 4` | `DEPOSIT_TIME_LOCK_ENABLED` | Deposits are escrowed and time-locked before delivery |
+| `1 << 5` | `EPOCH_WITHDRAWALS` | Withdrawals follow a fixed epoch schedule |
+| `1 << 6` | `FREEZE_WITHDRAWAL_YIELD` | Withdrawal payout is locked at the initiation-time exchange rate |
 
 #### Fetch a Single Vault
 
@@ -286,7 +308,9 @@ There are two kinds of depositors supported by the program.
 
 For Glow margin accounts, shares minted by the vault are transferred to the margin account to be treated as collateral.
 
-For other users, the shares **are minted but kept by a `VaultUser` account**.
+For other users in **standard vaults**, the shares are minted but kept by a `VaultUser` account.
+
+For **transferable vaults** (where the `SHARES_TRANSFERABLE` flag is set), shares are minted directly to the user's wallet as tokens. This means the shares can be freely transferred between wallets. See the [Transferable Vault Instructions](#transferable-vault-instructions) section for the corresponding instruction helpers.
 
 ```ts
 // VaultUserAccount
@@ -401,7 +425,52 @@ const pendingWithdrawals = await fetchVaultPendingWithdrawals(program, vaultAddr
 const maybePendingWithdrawals = await fetchVaultPendingWithdrawalsNullable(program, vaultAddress, withdrawerAddress);
 ```
 
+## Pending Deposits (Transferable Vaults)
+
+Transferable vaults with the `DEPOSIT_TIME_LOCK_ENABLED` flag set escrow deposited shares in a `PendingDeposits` account until the delivery lock period expires.
+
+```ts
+type PendingDeposit = {
+    pendingShares: BN;
+    depositTimestamp: BN;
+    // Snapshotted from the vault config at deposit time
+    deliveryWaitingPeriod: number;
+    redemptionWaitingPeriod: number;
+}
+
+type PendingDepositsAccount = {
+    owner: PublicKey;
+    vault: PublicKey;
+    totalPendingShares: BN;
+    // Fixed size array of 8 pending deposits
+    // If values are 0, the slot is empty
+    deposits: PendingDeposit[];
+}
+```
+
+### Deriving Pending Deposits Address
+
+```typescript
+import { deriveVaultPendingDeposits } from 'glow-vaults-sdk';
+
+const pendingDepositsAddress = deriveVaultPendingDeposits(vaultAddress, depositorAddress);
+```
+
+### Fetching Pending Deposits
+
+```typescript
+import { fetchVaultPendingDeposits, fetchVaultPendingDepositsNullable } from 'glow-vaults-sdk';
+
+// Throws if not found
+const pendingDeposits = await fetchVaultPendingDeposits(program, vaultAddress, depositorAddress);
+
+// Returns null if not found
+const maybePendingDeposits = await fetchVaultPendingDepositsNullable(program, vaultAddress, depositorAddress);
+```
+
 ## Instructions
+
+The SDK provides instruction helpers for both standard vaults and transferable vaults.
 
 ### Deposit to Vault
 
@@ -509,6 +578,130 @@ const tx = new Transaction().add(...instructions);
 await provider.sendAndConfirm(tx);
 ```
 
+### Transferable Vault Instructions
+
+The following instruction helpers are for vaults with the `SHARES_TRANSFERABLE` flag set. In these vaults, shares are held directly in the user's wallet as token-2022 tokens rather than being held by a `VaultUser` PDA.
+
+#### Deposit to Transferable Vault
+
+Deposit tokens into a transferable vault. The function reads the vault's on-chain flags to determine whether the deposit is time-locked.
+
+- **Non-locked**: shares are minted directly to the depositor's wallet ATA.
+- **Time-locked** (`DEPOSIT_TIME_LOCK_ENABLED`): shares are escrowed in the vault's pending deposits custody. The depositor must later call `withClaimDepositedShares` to claim them.
+
+```typescript
+import { withTransferableVaultDeposit } from 'glow-vaults-sdk';
+
+const instructions: TransactionInstruction[] = [];
+
+await withTransferableVaultDeposit({
+    program,
+    vault,
+    depositor: wallet.publicKey,
+    instructions,
+    amount: new BN(1_000_000),
+});
+
+const tx = new Transaction().add(...instructions);
+await provider.sendAndConfirm(tx);
+```
+
+#### Claim Deposited Shares
+
+Claim escrowed shares after the delivery lock period has expired. Only applicable to transferable vaults with `DEPOSIT_TIME_LOCK_ENABLED`.
+
+```typescript
+import { withClaimDepositedShares } from 'glow-vaults-sdk';
+
+const instructions: TransactionInstruction[] = [];
+
+await withClaimDepositedShares({
+    program,
+    vault,
+    depositor: wallet.publicKey,
+    instructions,
+    depositIndex: 0, // Index of the pending deposit to claim
+});
+
+const tx = new Transaction().add(...instructions);
+await provider.sendAndConfirm(tx);
+```
+
+#### Initiate Transferable Vault Withdrawal
+
+Start a withdrawal from a transferable vault. Shares are transferred from the user's wallet to the vault's pending withdrawals custody account. The user must later call `withExecuteTransferableVaultWithdrawal` after the waiting period.
+
+```typescript
+import { withInitiateTransferableVaultWithdrawal } from 'glow-vaults-sdk';
+
+const instructions: TransactionInstruction[] = [];
+
+await withInitiateTransferableVaultWithdrawal({
+    program,
+    connection,
+    vault,
+    withdrawer: wallet.publicKey,
+    instructions,
+    amount: new BN(500_000), // Share amount to withdraw
+});
+
+const tx = new Transaction().add(...instructions);
+await provider.sendAndConfirm(tx);
+```
+
+#### Execute Transferable Vault Withdrawal
+
+Execute a pending withdrawal from a transferable vault after the waiting period has passed.
+
+```typescript
+import { withExecuteTransferableVaultWithdrawal } from 'glow-vaults-sdk';
+
+const instructions: TransactionInstruction[] = [];
+
+await withExecuteTransferableVaultWithdrawal({
+    program,
+    vault,
+    withdrawer: wallet.publicKey,
+    instructions,
+    withdrawalIndex: 0,
+});
+
+const tx = new Transaction().add(...instructions);
+await provider.sendAndConfirm(tx);
+```
+
+#### Cancel Transferable Vault Pending Withdrawal
+
+Cancel a pending withdrawal from a transferable vault. The escrowed shares are returned to the user's wallet.
+
+```typescript
+import { withCancelTransferableVaultPendingWithdrawal } from 'glow-vaults-sdk';
+
+const instructions: TransactionInstruction[] = [];
+
+await withCancelTransferableVaultPendingWithdrawal({
+    program,
+    vault,
+    owner: wallet.publicKey,
+    instructions,
+    withdrawalIndex: 0,
+});
+
+const tx = new Transaction().add(...instructions);
+await provider.sendAndConfirm(tx);
+```
+
+#### Derive Transferable Share Token Account
+
+You can derive the share token ATA for a transferable vault user directly:
+
+```typescript
+import { deriveTransferableShareTokenAccount, fetchVault } from 'glow-vaults-sdk';
+
+const vault = await fetchVault(program, vaultAddress);
+const shareAta = deriveTransferableShareTokenAccount(vault, wallet.publicKey);
+```
+
 ## Combining Multiple Instructions
 
 You can combine multiple operations in a single transaction:
@@ -549,7 +742,7 @@ The SDK wraps raw IDL-decoded account data with their addresses for convenience.
 All fetch functions return wrapper types that include both the account address and the decoded data:
 
 ```typescript
-import type { Vault, VaultUser, PendingWithdrawals } from 'glow-vaults-sdk';
+import type { Vault, VaultUser, PendingWithdrawals, PendingDeposits } from 'glow-vaults-sdk';
 
 // Vault wrapper - includes address and account data
 type Vault = {
@@ -568,6 +761,12 @@ type PendingWithdrawals = {
     address: PublicKey;
     account: PendingWithdrawalsAccount;
 }
+
+// PendingDeposits wrapper (transferable vaults with time-locked deposits)
+type PendingDeposits = {
+    address: PublicKey;
+    account: PendingDepositsAccount;
+}
 ```
 
 ### Raw Account Types
@@ -575,7 +774,12 @@ type PendingWithdrawals = {
 The raw IDL-decoded types are also exported if you need to work with just the account data:
 
 ```typescript
-import type { VaultAccount, VaultUserAccount, PendingWithdrawalsAccount } from 'glow-vaults-sdk';
+import type {
+    VaultAccount,
+    VaultUserAccount,
+    PendingWithdrawalsAccount,
+    PendingDepositsAccount,
+} from 'glow-vaults-sdk';
 ```
 
 ### Balance and Exchange Rate Types
