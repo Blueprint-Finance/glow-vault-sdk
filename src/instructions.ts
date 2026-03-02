@@ -362,7 +362,13 @@ export async function withTransferableVaultDeposit({
     amount: BN;
 }) {
     const vaultAccount = await program.account.vault.fetch(vault.address);
-    const isLocked = (Number(vaultAccount.flags) & DEPOSIT_TIME_LOCK_ENABLED) !== 0;
+    const depositLockPeriod =
+        (vaultAccount as { depositDeliveryLockPeriod?: BN }).depositDeliveryLockPeriod ??
+        (vaultAccount as { deposit_delivery_lock_period?: BN }).deposit_delivery_lock_period;
+    const isLocked =
+        (Number(vaultAccount.flags) & DEPOSIT_TIME_LOCK_ENABLED) !== 0 &&
+        depositLockPeriod != null &&
+        !depositLockPeriod.isZero();
 
     const shareMint = deriveVaultShareMint(vault.address);
 
@@ -371,12 +377,11 @@ export async function withTransferableVaultDeposit({
     }
 
     let shareTokenAccount: PublicKey | null = null;
-    let pendingDeposits: PublicKey | null = null;
-    let vaultPendingDepositsCustody: PublicKey | null = null;
+    const pendingDeposits = deriveVaultPendingDeposits(vault.address, depositor);
+    const vaultPendingDepositsCustody = deriveVaultPendingDepositsCustody(vault.address);
 
     if (isLocked) {
-        pendingDeposits = deriveVaultPendingDeposits(vault.address, depositor);
-        vaultPendingDepositsCustody = deriveVaultPendingDepositsCustody(vault.address);
+        // Leave shareTokenAccount null; program will use pendingDeposits and custody
     } else {
         shareTokenAccount = deriveTransferableShareTokenAccount(vault, depositor);
         const shareTokenAccountInfo = await program.provider.connection.getAccountInfo(shareTokenAccount);
@@ -417,7 +422,7 @@ export async function withTransferableVaultDeposit({
                     vault.account.underlyingMintTokenProgram,
                     depositor,
                 ),
-                shareTokenAccount,
+                shareTokenAccount: shareTokenAccount ?? SystemProgram.programId,
                 pendingDeposits,
                 vaultPendingDepositsCustody,
                 underlyingMintTokenProgram: vault.account.underlyingMintTokenProgram,

@@ -580,6 +580,8 @@ await provider.sendAndConfirm(tx);
 
 ### Transferable Vault Instructions
 
+> NOTE: We have created a 'USDC' vault in devnet with the address `EzDmLUHTj53mSLN4BBrsuW8w3Gvc1iDGiYCXrkwm4vrR`. To airdrop the USDC tokens, we have added a test (Transferrable vault deposit integration test) which you can run to mint the tokens and deposit into the vault.
+
 The following instruction helpers are for vaults with the `SHARES_TRANSFERABLE` flag set. In these vaults, shares are held directly in the user's wallet as token-2022 tokens rather than being held by a `VaultUser` PDA.
 
 #### Deposit to Transferable Vault
@@ -827,6 +829,40 @@ type VaultUserBalance = {
 
 ```bash
 pnpm test
+```
+
+### Transferrable vault deposit integration test
+
+The test in `src/__tests__/transferrable-vault-deposit.test.ts` runs against devnet. It fetches the transferrable token vault at `EzDmLUHTj53mSLN4BBrsuW8w3Gvc1iDGiYCXrkwm4vrR`, requests 10,000 USDC from the Glow test-service, deposits 5,000 USDC via the SDK, and asserts that a pending deposit or share balance exists.
+
+**Prerequisites**
+
+- Node and pnpm installed
+- A Solana keypair with devnet SOL for transaction fees
+
+**Wallet**
+
+The test uses the default system wallet:
+
+- **Default path:** `~/.config/solana/id.json`
+- **Override:** set `SOLANA_KEYPAIR` to the path of your keypair file (JSON array of secret key bytes)
+
+**Run**
+
+From the `glow-vaults-sdk` directory:
+
+```bash
+# Run all tests (includes the transferrable vault deposit test)
+pnpm test
+
+# Run only the transferrable vault deposit test
+node --import tsx --test src/__tests__/transferrable-vault-deposit.test.ts
+```
+
+Or with pnpm:
+
+```bash
+pnpm exec node --import tsx --test src/__tests__/transferrable-vault-deposit.test.ts
 ```
 
 ## License

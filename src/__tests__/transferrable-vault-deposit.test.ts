@@ -1,0 +1,172 @@
+/*
+ * Copyright (C) 2026 A1 XYZ, INC.
+ *
+ * Integration test: fetch a devnet transferrable token vault, request USDC from
+ * the Glow test-service, deposit to the vault, and confirm a pending deposit exists.
+ */
+
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
+import BN from 'bn.js';
+import { AnchorProvider, Program, setProvider } from '@coral-xyz/anchor';
+import {
+    ASSOCIATED_TOKEN_PROGRAM_ID,
+    createAssociatedTokenAccountIdempotentInstruction,
+    getAssociatedTokenAddressSync,
+} from '@solana/spl-token';
+import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
+
+import {
+    fetchVault,
+    fetchVaultPendingDepositsNullable,
+    withTransferableVaultDeposit,
+    deriveTransferableShareTokenAccount,
+} from '../instructions';
+import type { GlowVault } from '../idls/glow_vault';
+import IDL from '../idls/glow_vault.json';
+
+const DEVNET_RPC_URL = 'https://api.devnet.solana.com';
+const VAULT_ADDRESS = new PublicKey('EzDmLUHTj53mSLN4BBrsuW8w3Gvc1iDGiYCXrkwm4vrR');
+
+const TEST_SERVICE_PROGRAM_ID = new PublicKey('test7JXXboKpc8hGTadvoXcFWN4xgnHLGANU92JKrwA');
+const TOKEN_REQUEST_DISCRIMINATOR = new Uint8Array([98, 39, 56, 30, 213, 98, 108, 244]);
+
+const USDC_DECIMALS = 6;
+const REQUEST_AMOUNT = 10_000 * 10 ** USDC_DECIMALS;
+const DEPOSIT_AMOUNT = 5_000 * 10 ** USDC_DECIMALS;
+
+function loadWalletKeypair(): Keypair {
+    const path =
+        process.env.SOLANA_KEYPAIR ?? resolve(process.env.HOME ?? '', '.config', 'solana', 'id.json');
+    const secret = JSON.parse(readFileSync(path, 'utf-8'));
+    return Keypair.fromSecretKey(Uint8Array.from(secret));
+}
+
+function deriveTokenInfoPda(mint: PublicKey): PublicKey {
+    const [pda] = PublicKey.findProgramAddressSync(
+        [Buffer.from('token-info'), mint.toBuffer()],
+        TEST_SERVICE_PROGRAM_ID,
+    );
+    return pda;
+}
+
+function buildTokenRequestInstruction(
+    payer: PublicKey,
+    requester: PublicKey,
+    mint: PublicKey,
+    tokenProgram: PublicKey,
+    destination: PublicKey,
+    amount: bigint,
+): TransactionInstruction {
+    const data = new Uint8Array(8 + 8);
+    data.set(TOKEN_REQUEST_DISCRIMINATOR, 0);
+    new DataView(data.buffer).setBigUint64(8, amount, true);
+
+    const info = deriveTokenInfoPda(mint);
+
+    return new TransactionInstruction({
+        programId: TEST_SERVICE_PROGRAM_ID,
+        keys: [
+            { pubkey: payer, isSigner: true, isWritable: true },
+            { pubkey: requester, isSigner: false, isWritable: false },
+            { pubkey: mint, isSigner: false, isWritable: true },
+            { pubkey: info, isSigner: false, isWritable: false },
+            { pubkey: destination, isSigner: false, isWritable: true },
+            { pubkey: tokenProgram, isSigner: false, isWritable: false },
+        ],
+        data,
+    });
+}
+
+describe('transferrable vault deposit', () => {
+    it('fetches vault, requests USDC from test-service, deposits, and confirms pending deposit', async () => {
+        const wallet = loadWalletKeypair();
+        const connection = new Connection(DEVNET_RPC_URL, 'confirmed');
+        const walletAdapter = {
+            publicKey: wallet.publicKey,
+            signTransaction: async (tx: Transaction) => {
+                tx.partialSign(wallet);
+                return tx;
+            },
+            signAllTransactions: async (txs: Transaction[]) => {
+                txs.forEach((tx) => tx.partialSign(wallet));
+                return txs;
+            },
+        };
+        const provider = new AnchorProvider(connection, walletAdapter, { commitment: 'confirmed' });
+        setProvider(provider);
+
+        const program = new Program<GlowVault>(IDL as GlowVault, provider);
+
+        const vault = await fetchVault(program, VAULT_ADDRESS);
+        const underlyingMint = vault.account.underlyingMint;
+        const tokenProgram = vault.account.underlyingMintTokenProgram;
+
+        const destinationAta = getAssociatedTokenAddressSync(
+            underlyingMint,
+            wallet.publicKey,
+            false,
+            tokenProgram,
+            ASSOCIATED_TOKEN_PROGRAM_ID,
+        );
+
+        const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+            wallet.publicKey,
+            destinationAta,
+            wallet.publicKey,
+            underlyingMint,
+            tokenProgram,
+            ASSOCIATED_TOKEN_PROGRAM_ID,
+        );
+
+        const tokenRequestIx = buildTokenRequestInstruction(
+            wallet.publicKey,
+            wallet.publicKey,
+            underlyingMint,
+            tokenProgram,
+            destinationAta,
+            BigInt(REQUEST_AMOUNT),
+        );
+
+        const requestTx = new Transaction().add(createAtaIx, tokenRequestIx);
+        const requestSig = await provider.sendAndConfirm(requestTx, [wallet]);
+        assert.ok(requestSig, 'token_request transaction should confirm');
+
+        const depositInstructions: TransactionInstruction[] = [];
+        await withTransferableVaultDeposit({
+            program,
+            vault,
+            depositor: wallet.publicKey,
+            instructions: depositInstructions,
+            amount: new BN(DEPOSIT_AMOUNT),
+        });
+
+        const depositTx = new Transaction().add(...depositInstructions);
+        const depositSig = await provider.sendAndConfirm(depositTx, [wallet]);
+        assert.ok(depositSig, 'deposit transaction should confirm');
+
+        const pendingDepositsResult = await fetchVaultPendingDepositsNullable(
+            program,
+            vault.address,
+            wallet.publicKey,
+        );
+        const totalPendingShares =
+            pendingDepositsResult?.account &&
+            ((pendingDepositsResult.account as { total_pending_shares?: BN }).total_pending_shares ??
+                (pendingDepositsResult.account as { totalPendingShares?: BN }).totalPendingShares);
+        const hasPendingDeposit =
+            totalPendingShares != null && !totalPendingShares.isZero();
+
+        const shareAta = deriveTransferableShareTokenAccount(vault, wallet.publicKey);
+        const shareBalance = await connection.getTokenAccountBalance(shareAta);
+        const shareAmount = shareBalance?.value?.amount ? BigInt(shareBalance.value.amount) : 0n;
+        const hasShareBalance = shareAmount > 0n;
+
+        assert.ok(
+            hasPendingDeposit || hasShareBalance,
+            'after deposit, either a pending deposit should exist or share ATA balance should be non-zero',
+        );
+    });
+});
