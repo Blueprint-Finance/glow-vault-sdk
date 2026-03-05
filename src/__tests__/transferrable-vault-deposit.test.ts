@@ -18,9 +18,8 @@ import {
 } from '@solana/spl-token';
 import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 
+import { fetchVault, fetchVaultPendingDepositsNullable } from '../state';
 import {
-    fetchVault,
-    fetchVaultPendingDepositsNullable,
     withTransferableVaultDeposit,
     deriveTransferableShareTokenAccount,
 } from '../instructions';
