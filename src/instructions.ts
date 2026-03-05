@@ -41,8 +41,6 @@ import {
 } from './pda';
 import { findDerivedAccount } from './utils';
 
-export * from './state';
-
 /**
  * Derive the associated token address for a given mint, token program, and owner.
  */
