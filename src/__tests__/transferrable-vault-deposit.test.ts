@@ -2,7 +2,8 @@
  * Copyright (C) 2026 A1 XYZ, INC.
  *
  * Integration test: fetch a devnet transferrable token vault, request USDC from
- * the Glow test-service, deposit to the vault, and confirm a pending deposit exists.
+ * the Glow test-service, deposit to the vault, confirm a pending deposit or share
+ * balance, and when the user has shares, initiate and optionally execute a withdrawal.
  */
 
 import { readFileSync } from 'node:fs';
@@ -21,7 +22,10 @@ import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } f
 import {
     fetchVault,
     fetchVaultPendingDepositsNullable,
+    fetchVaultPendingWithdrawalsNullable,
     withTransferableVaultDeposit,
+    withInitiateTransferableVaultWithdrawal,
+    withExecuteTransferableVaultWithdrawal,
     deriveTransferableShareTokenAccount,
 } from '../instructions';
 import type { GlowVault } from '../idls/glow_vault';
@@ -168,5 +172,70 @@ describe('transferrable vault deposit', () => {
             hasPendingDeposit || hasShareBalance,
             'after deposit, either a pending deposit should exist or share ATA balance should be non-zero',
         );
+
+        if (!hasShareBalance) {
+            return;
+        }
+
+        const withdrawAmount = new BN(shareAmount.toString());
+        const initiateIxs: TransactionInstruction[] = [];
+        await withInitiateTransferableVaultWithdrawal({
+            program,
+            connection,
+            vault,
+            withdrawer: wallet.publicKey,
+            instructions: initiateIxs,
+            amount: withdrawAmount,
+        });
+
+        const initiateTx = new Transaction().add(...initiateIxs);
+        const initiateSig = await provider.sendAndConfirm(initiateTx, [wallet]);
+        assert.ok(initiateSig, 'initiate transferable vault withdrawal should confirm');
+
+        const withdrawalWaitingPeriod =
+            (vault.account as { withdrawalWaitingPeriod?: BN }).withdrawalWaitingPeriod ??
+            (vault.account as { withdrawal_waiting_period?: BN }).withdrawal_waiting_period;
+        const waitingPeriodSeconds =
+            withdrawalWaitingPeriod != null ? withdrawalWaitingPeriod.toNumber() : 0;
+
+        if (waitingPeriodSeconds === 0) {
+            const executeIxs: TransactionInstruction[] = [];
+            await withExecuteTransferableVaultWithdrawal({
+                program,
+                vault,
+                withdrawer: wallet.publicKey,
+                instructions: executeIxs,
+                withdrawalIndex: 0,
+            });
+
+            const underlyingBefore = await connection.getTokenAccountBalance(destinationAta);
+            const beforeAmount = underlyingBefore?.value?.amount
+                ? BigInt(underlyingBefore.value.amount)
+                : 0n;
+
+            const executeTx = new Transaction().add(...executeIxs);
+            const executeSig = await provider.sendAndConfirm(executeTx, [wallet]);
+            assert.ok(executeSig, 'execute transferable vault withdrawal should confirm');
+
+            const underlyingAfter = await connection.getTokenAccountBalance(destinationAta);
+            const afterAmount = underlyingAfter?.value?.amount
+                ? BigInt(underlyingAfter.value.amount)
+                : 0n;
+
+            assert.ok(
+                afterAmount > beforeAmount,
+                'underlying token balance should increase after withdrawal',
+            );
+        } else {
+            const pendingWithdrawals = await fetchVaultPendingWithdrawalsNullable(
+                program,
+                vault.address,
+                wallet.publicKey,
+            );
+            assert.ok(pendingWithdrawals != null, 'pending withdrawals account should exist');
+            const acc = pendingWithdrawals!.account as { withdrawals?: unknown[] };
+            const withdrawals = acc.withdrawals ?? [];
+            assert.ok(withdrawals.length >= 1, 'at least one pending withdrawal should exist');
+        }
     });
 });
