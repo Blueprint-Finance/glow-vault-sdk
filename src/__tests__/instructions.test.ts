@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import { AnchorProvider, Program, setProvider } from '@coral-xyz/anchor';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 
-import { fetchAllVaults } from '../instructions';
+import { fetchAllVaults } from '../state';
 import type { GlowVault } from '../idls/glow_vault';
 import IDL from '../idls/glow_vault.json';
 
