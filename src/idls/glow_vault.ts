@@ -142,6 +142,191 @@ export type GlowVault = {
       ]
     },
     {
+      "name": "cancelTransferableVaultPendingWithdrawal",
+      "discriminator": [
+        120,
+        37,
+        38,
+        11,
+        109,
+        22,
+        216,
+        146
+      ],
+      "accounts": [
+        {
+          "name": "withdrawer",
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pendingWithdrawals",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  112,
+                  101,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  119,
+                  105,
+                  116,
+                  104,
+                  100,
+                  114,
+                  97,
+                  119,
+                  97,
+                  108,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "withdrawer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "shareMint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vaultPendingWithdrawalsCustody",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  119,
+                  105,
+                  116,
+                  104,
+                  100,
+                  114,
+                  97,
+                  119,
+                  97,
+                  108,
+                  115,
+                  95,
+                  99,
+                  117,
+                  115,
+                  116,
+                  111,
+                  100,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "destinationShareTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "mintTokenProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "withdrawalIndex",
+          "type": "u8"
+        }
+      ]
+    },
+    {
       "name": "cancelVaultPendingWithdrawal",
       "discriminator": [
         200,
@@ -358,6 +543,184 @@ export type GlowVault = {
       ]
     },
     {
+      "name": "claimDepositedShares",
+      "discriminator": [
+        115,
+        228,
+        22,
+        78,
+        134,
+        193,
+        160,
+        189
+      ],
+      "accounts": [
+        {
+          "name": "depositor",
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pendingDeposits",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  112,
+                  101,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "depositor"
+              }
+            ]
+          }
+        },
+        {
+          "name": "shareMint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "shareTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "vaultPendingDepositsCustody",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  115,
+                  95,
+                  99,
+                  117,
+                  115,
+                  116,
+                  111,
+                  100,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "depositIndex",
+          "type": "u8"
+        }
+      ]
+    },
+    {
       "name": "closeOperatorMarginAccount",
       "discriminator": [
         182,
@@ -462,6 +825,44 @@ export type GlowVault = {
         },
         {
           "name": "adapterProgram"
+        },
+        {
+          "name": "adapterSigner",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  100,
+                  97,
+                  112,
+                  116,
+                  101,
+                  114,
+                  45,
+                  115,
+                  105,
+                  103,
+                  110,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "airspace"
+              },
+              {
+                "kind": "account",
+                "path": "adapterProgram"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "adapterProgram"
+            }
+          }
         },
         {
           "name": "glowMarginProgram",
@@ -716,6 +1117,44 @@ export type GlowVault = {
         },
         {
           "name": "adapterProgram"
+        },
+        {
+          "name": "adapterSigner",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  100,
+                  97,
+                  112,
+                  116,
+                  101,
+                  114,
+                  45,
+                  115,
+                  105,
+                  103,
+                  110,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "airspace"
+              },
+              {
+                "kind": "account",
+                "path": "adapterProgram"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "adapterProgram"
+            }
+          }
         },
         {
           "name": "glowMarginProgram",
@@ -1045,6 +1484,258 @@ export type GlowVault = {
       "args": []
     },
     {
+      "name": "depositToTransferableVault",
+      "discriminator": [
+        181,
+        69,
+        13,
+        254,
+        229,
+        99,
+        110,
+        131
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "depositor",
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "underlyingMint"
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "shareMint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          },
+          "relations": [
+            "vault"
+          ]
+        },
+        {
+          "name": "underlyingMint",
+          "relations": [
+            "vault"
+          ]
+        },
+        {
+          "name": "depositorUnderlyingTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "shareTokenAccount",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "vaultReserve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  117,
+                  110,
+                  100,
+                  101,
+                  114,
+                  108,
+                  121,
+                  105,
+                  110,
+                  103,
+                  95,
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pendingDeposits",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  112,
+                  101,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "depositor"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vaultPendingDepositsCustody",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  115,
+                  95,
+                  99,
+                  117,
+                  115,
+                  116,
+                  111,
+                  100,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "underlyingMintTokenProgram"
+        },
+        {
+          "name": "shareTokenProgram"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "tokenChange",
+          "type": {
+            "defined": {
+              "name": "tokenChange"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "depositToVault",
       "discriminator": [
         18,
@@ -1243,6 +1934,239 @@ export type GlowVault = {
               "name": "tokenChange"
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "executeTransferableVaultWithdrawal",
+      "discriminator": [
+        128,
+        151,
+        48,
+        188,
+        193,
+        11,
+        139,
+        186
+      ],
+      "accounts": [
+        {
+          "name": "withdrawer",
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "underlyingMint"
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pendingWithdrawals",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  112,
+                  101,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  119,
+                  105,
+                  116,
+                  104,
+                  100,
+                  114,
+                  97,
+                  119,
+                  97,
+                  108,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "withdrawer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "shareMint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "underlyingMint",
+          "writable": true
+        },
+        {
+          "name": "vaultPendingWithdrawalsCustody",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  119,
+                  105,
+                  116,
+                  104,
+                  100,
+                  114,
+                  97,
+                  119,
+                  97,
+                  108,
+                  115,
+                  95,
+                  99,
+                  117,
+                  115,
+                  116,
+                  111,
+                  100,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vaultReserve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  117,
+                  110,
+                  100,
+                  101,
+                  114,
+                  108,
+                  121,
+                  105,
+                  110,
+                  103,
+                  95,
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "destinationUnderlyingTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "mintTokenProgram"
+        },
+        {
+          "name": "underlyingMintTokenProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "withdrawalIndex",
+          "type": "u8"
         }
       ]
     },
@@ -1507,6 +2431,264 @@ export type GlowVault = {
         {
           "name": "withdrawalIndex",
           "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "initializeVaultMargin",
+      "discriminator": [
+        233,
+        185,
+        30,
+        73,
+        94,
+        49,
+        47,
+        64
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "airspace",
+          "relations": [
+            "vault",
+            "underlyingTokenConfig"
+          ]
+        },
+        {
+          "name": "airspaceAuthority",
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "shareMint",
+          "writable": true,
+          "relations": [
+            "vault"
+          ]
+        },
+        {
+          "name": "underlyingMint",
+          "relations": [
+            "vault"
+          ]
+        },
+        {
+          "name": "shareTokenConfig",
+          "writable": true
+        },
+        {
+          "name": "underlyingTokenConfig"
+        },
+        {
+          "name": "glowMargin",
+          "address": "GLoWMgcn3VbyFKiC2FGMgfKxYSyTJS7uKFwKY2CSkq9X"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "config",
+          "type": {
+            "defined": {
+              "name": "vaultMarginCollateralConfig"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "initiateTransferableVaultWithdrawal",
+      "discriminator": [
+        55,
+        176,
+        26,
+        238,
+        136,
+        124,
+        18,
+        90
+      ],
+      "accounts": [
+        {
+          "name": "withdrawer",
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pendingWithdrawals",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  112,
+                  101,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  119,
+                  105,
+                  116,
+                  104,
+                  100,
+                  114,
+                  97,
+                  119,
+                  97,
+                  108,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "withdrawer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "shareMint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "shareTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "vaultPendingWithdrawalsCustody",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  119,
+                  105,
+                  116,
+                  104,
+                  100,
+                  114,
+                  97,
+                  119,
+                  97,
+                  108,
+                  115,
+                  95,
+                  99,
+                  117,
+                  115,
+                  116,
+                  111,
+                  100,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "shares",
+          "type": "u64"
         }
       ]
     },
@@ -3228,6 +4410,187 @@ export type GlowVault = {
       ]
     },
     {
+      "name": "updateShareTokenMetadata",
+      "discriminator": [
+        33,
+        144,
+        157,
+        164,
+        161,
+        4,
+        219,
+        121
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "shareMint",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "metadata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  11,
+                  112,
+                  101,
+                  177,
+                  227,
+                  209,
+                  124,
+                  69,
+                  56,
+                  157,
+                  82,
+                  127,
+                  107,
+                  4,
+                  195,
+                  205,
+                  88,
+                  184,
+                  108,
+                  115,
+                  26,
+                  160,
+                  253,
+                  181,
+                  73,
+                  182,
+                  209,
+                  188,
+                  3,
+                  248,
+                  41,
+                  70
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "shareMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                11,
+                112,
+                101,
+                177,
+                227,
+                209,
+                124,
+                69,
+                56,
+                157,
+                82,
+                127,
+                107,
+                4,
+                195,
+                205,
+                88,
+                184,
+                108,
+                115,
+                26,
+                160,
+                253,
+                181,
+                73,
+                182,
+                209,
+                188,
+                3,
+                248,
+                41,
+                70
+              ]
+            }
+          }
+        },
+        {
+          "name": "tokenProgram"
+        },
+        {
+          "name": "tokenMetadataProgram",
+          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "sysvarInstructions"
+        }
+      ],
+      "args": [
+        {
+          "name": "metadata",
+          "type": {
+            "defined": {
+              "name": "shareTokenMetadata"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "updateVaultBalances",
       "discriminator": [
         43,
@@ -3409,6 +4772,19 @@ export type GlowVault = {
       ]
     },
     {
+      "name": "pendingDeposits",
+      "discriminator": [
+        38,
+        207,
+        9,
+        20,
+        9,
+        100,
+        40,
+        17
+      ]
+    },
+    {
       "name": "pendingWithdrawals",
       "discriminator": [
         238,
@@ -3432,6 +4808,19 @@ export type GlowVault = {
         232,
         83,
         160
+      ]
+    },
+    {
+      "name": "tokenConfig",
+      "discriminator": [
+        92,
+        73,
+        255,
+        43,
+        107,
+        51,
+        117,
+        101
       ]
     },
     {
@@ -3502,6 +4891,19 @@ export type GlowVault = {
       ]
     },
     {
+      "name": "claimDepositedShares",
+      "discriminator": [
+        194,
+        37,
+        207,
+        139,
+        9,
+        190,
+        77,
+        108
+      ]
+    },
+    {
       "name": "createPendingWithdrawal",
       "discriminator": [
         191,
@@ -3564,6 +4966,19 @@ export type GlowVault = {
         128,
         198,
         157
+      ]
+    },
+    {
+      "name": "shareTokenMetadataUpdated",
+      "discriminator": [
+        198,
+        125,
+        210,
+        142,
+        81,
+        143,
+        15,
+        135
       ]
     },
     {
@@ -3815,6 +5230,36 @@ export type GlowVault = {
       "code": 6033,
       "name": "accountShouldBeEmpty",
       "msg": "Account should be empty"
+    },
+    {
+      "code": 6034,
+      "name": "tooManyPendingDeposits",
+      "msg": "Too many pending deposits"
+    },
+    {
+      "code": 6035,
+      "name": "depositDeliveryLockNotPassed",
+      "msg": "Deposit delivery lock period has not passed"
+    },
+    {
+      "code": 6036,
+      "name": "depositDeliveryLockPassed",
+      "msg": "Deposit delivery lock period has already passed"
+    },
+    {
+      "code": 6037,
+      "name": "invalidDepositLockConfig",
+      "msg": "Redemption lock period must be <= delivery lock period"
+    },
+    {
+      "code": 6038,
+      "name": "invalidEpochConfig",
+      "msg": "Invalid epoch withdrawal config: period must be > 0 and cutoff < period"
+    },
+    {
+      "code": 6039,
+      "name": "withdrawalLimitExceeded",
+      "msg": "Withdrawal exceeds the vault's per-transaction withdrawal limit"
     }
   ],
   "types": [
@@ -3999,6 +5444,34 @@ export type GlowVault = {
           },
           {
             "name": "shiftBy"
+          }
+        ]
+      }
+    },
+    {
+      "name": "claimDepositedShares",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "depositor",
+            "type": "pubkey"
+          },
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "shareMint",
+            "type": "pubkey"
+          },
+          {
+            "name": "sharesClaimed",
+            "type": "u64"
+          },
+          {
+            "name": "depositIndex",
+            "type": "u8"
           }
         ]
       }
@@ -4400,6 +5873,63 @@ export type GlowVault = {
       }
     },
     {
+      "name": "pendingDeposit",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pendingShares",
+            "type": "u64"
+          },
+          {
+            "name": "depositTimestamp",
+            "type": "i64"
+          },
+          {
+            "name": "deliveryWaitingPeriod",
+            "type": "u32"
+          },
+          {
+            "name": "redemptionWaitingPeriod",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "pendingDeposits",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "totalPendingShares",
+            "type": "u64"
+          },
+          {
+            "name": "deposits",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "pendingDeposit"
+                  }
+                },
+                8
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "pendingWithdrawal",
       "type": {
         "kind": "struct",
@@ -4538,6 +6068,79 @@ export type GlowVault = {
       }
     },
     {
+      "name": "shareTokenMetadata",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "symbol",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "uri",
+            "type": {
+              "option": "string"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "shareTokenMetadataUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "shareMint",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "tokenAdmin",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "margin",
+            "fields": [
+              {
+                "name": "oracle",
+                "type": {
+                  "defined": {
+                    "name": "tokenPriceOracle"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "adapter",
+            "fields": [
+              "pubkey"
+            ]
+          }
+        ]
+      }
+    },
+    {
       "name": "tokenChange",
       "type": {
         "kind": "struct",
@@ -4553,6 +6156,111 @@ export type GlowVault = {
           {
             "name": "tokens",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "tokenConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "mintTokenProgram",
+            "type": "pubkey"
+          },
+          {
+            "name": "underlyingMint",
+            "type": "pubkey"
+          },
+          {
+            "name": "underlyingMintTokenProgram",
+            "type": "pubkey"
+          },
+          {
+            "name": "airspace",
+            "type": "pubkey"
+          },
+          {
+            "name": "tokenKind",
+            "type": {
+              "defined": {
+                "name": "tokenKind"
+              }
+            }
+          },
+          {
+            "name": "valueModifier",
+            "type": "u16"
+          },
+          {
+            "name": "maxStaleness",
+            "type": "u64"
+          },
+          {
+            "name": "admin",
+            "type": {
+              "defined": {
+                "name": "tokenAdmin"
+              }
+            }
+          },
+          {
+            "name": "tokenFeatures",
+            "type": {
+              "defined": {
+                "name": "tokenFeatures"
+              }
+            }
+          },
+          {
+            "name": "version",
+            "type": "u8"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "tokenFeatures",
+      "repr": {
+        "kind": "transparent"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          "u16"
+        ]
+      }
+    },
+    {
+      "name": "tokenKind",
+      "repr": {
+        "kind": "rust"
+      },
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "collateral"
+          },
+          {
+            "name": "claim"
+          },
+          {
+            "name": "adapterCollateral"
           }
         ]
       }
@@ -4599,6 +6307,15 @@ export type GlowVault = {
                     32
                   ]
                 }
+              }
+            ]
+          },
+          {
+            "name": "glowFeed",
+            "fields": [
+              {
+                "name": "address",
+                "type": "pubkey"
               }
             ]
           }
@@ -4764,7 +6481,7 @@ export type GlowVault = {
             "type": "u8"
           },
           {
-            "name": "pythQuoteFeedId",
+            "name": "oracleField1",
             "type": {
               "array": [
                 "u8",
@@ -4773,7 +6490,7 @@ export type GlowVault = {
             }
           },
           {
-            "name": "pythRedemptionFeedId",
+            "name": "oracleField2",
             "type": {
               "array": [
                 "u8",
@@ -4786,11 +6503,35 @@ export type GlowVault = {
             "type": "u64"
           },
           {
+            "name": "depositDeliveryLockPeriod",
+            "type": "i64"
+          },
+          {
+            "name": "depositRedemptionLockPeriod",
+            "type": "i64"
+          },
+          {
+            "name": "epochPeriodSeconds",
+            "type": "u32"
+          },
+          {
+            "name": "epochCutoffBeforeSettlementSeconds",
+            "type": "u32"
+          },
+          {
+            "name": "reservedWithdrawalTokens",
+            "type": "u64"
+          },
+          {
+            "name": "reservedWithdrawalShares",
+            "type": "u64"
+          },
+          {
             "name": "reserved",
             "type": {
               "array": [
                 "u8",
-                56
+                16
               ]
             }
           }
@@ -4934,6 +6675,30 @@ export type GlowVault = {
                 }
               }
             }
+          },
+          {
+            "name": "depositDeliveryLockPeriod",
+            "type": {
+              "option": "i64"
+            }
+          },
+          {
+            "name": "depositRedemptionLockPeriod",
+            "type": {
+              "option": "i64"
+            }
+          },
+          {
+            "name": "epochPeriodSeconds",
+            "type": {
+              "option": "u32"
+            }
+          },
+          {
+            "name": "epochCutoffBeforeSettlementSeconds",
+            "type": {
+              "option": "u32"
+            }
           }
         ]
       }
@@ -5066,6 +6831,26 @@ export type GlowVault = {
         "kind": "struct",
         "fields": [
           "u8"
+        ]
+      }
+    },
+    {
+      "name": "vaultMarginCollateralConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "collateralMaxStaleness",
+            "type": "u64"
+          },
+          {
+            "name": "collateralTokenFeatures",
+            "type": {
+              "defined": {
+                "name": "tokenFeatures"
+              }
+            }
+          }
         ]
       }
     },
@@ -5225,6 +7010,16 @@ export type GlowVault = {
       "name": "vaultOracleTransferSeed",
       "type": "bytes",
       "value": "[118, 97, 117, 108, 116, 95, 111, 114, 97, 99, 108, 101, 95, 116, 114, 97, 110, 115, 102, 101, 114]"
+    },
+    {
+      "name": "vaultPendingDepositsCustodySeed",
+      "type": "bytes",
+      "value": "[118, 97, 117, 108, 116, 95, 100, 101, 112, 111, 115, 105, 116, 115, 95, 99, 117, 115, 116, 111, 100, 121]"
+    },
+    {
+      "name": "vaultPendingDepositsSeed",
+      "type": "bytes",
+      "value": "[118, 97, 117, 108, 116, 95, 112, 101, 110, 100, 105, 110, 103, 95, 100, 101, 112, 111, 115, 105, 116, 115]"
     },
     {
       "name": "vaultPendingWithdrawalsCustodySeed",

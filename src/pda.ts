@@ -35,3 +35,15 @@ export function deriveVaultPendingWithdrawals(vault: Address, withdrawer: Addres
 export function deriveVaultShareMint(vault: Address): PublicKey {
     return findDerivedAccount(GLOW_VAULT_ID, 'vault_deposit_mint', vault);
 }
+
+export function deriveVaultPendingDeposits(vault: Address, depositor: Address): PublicKey {
+    return findDerivedAccount(GLOW_VAULT_ID, 'vault_pending_deposits', vault, depositor);
+}
+
+export function deriveVaultPendingDepositsCustody(vault: Address): PublicKey {
+    return findDerivedAccount(GLOW_VAULT_ID, 'vault_deposits_custody', vault);
+}
+
+export function deriveVaultPendingWithdrawalsCustody(vault: Address): PublicKey {
+    return findDerivedAccount(GLOW_VAULT_ID, 'vault_withdrawals_custody', vault);
+}
