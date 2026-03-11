@@ -582,6 +582,26 @@ await provider.sendAndConfirm(tx);
 
 > NOTE: We have created a 'USDC' vault in devnet with the address `EzDmLUHTj53mSLN4BBrsuW8w3Gvc1iDGiYCXrkwm4vrR`. To airdrop the USDC tokens, we have added a test (Transferrable vault deposit integration test) which you can run to mint the tokens and deposit into the vault.
 
+#### Mint vault underlying (devnet only)
+
+Standalone command to mint a vault’s underlying tokens using the Glow devnet test-service. Use this to fund a wallet with the vault’s underlying asset (e.g. USDC) before depositing. Only works on devnet.
+
+```typescript
+import { fetchVault, withMintVaultUnderlyingFromTestService } from 'glow-vaults-sdk';
+
+const vault = await fetchVault(program, VAULT_ADDRESS);
+const instructions: TransactionInstruction[] = [];
+withMintVaultUnderlyingFromTestService({
+    vault,
+    destinationOwner: wallet.publicKey,
+    amount: BigInt(10_000 * 1e6), // e.g. 10k USDC (6 decimals)
+    instructions,
+});
+
+const tx = new Transaction().add(...instructions);
+await provider.sendAndConfirm(tx);
+```
+
 The following instruction helpers are for vaults with the `SHARES_TRANSFERABLE` flag set. In these vaults, shares are held directly in the user's wallet as token-2022 tokens rather than being held by a `VaultUser` PDA.
 
 #### Deposit to Transferable Vault

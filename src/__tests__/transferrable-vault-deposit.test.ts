@@ -12,11 +12,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import BN from 'bn.js';
 import { AnchorProvider, Program, setProvider } from '@coral-xyz/anchor';
-import {
-    ASSOCIATED_TOKEN_PROGRAM_ID,
-    createAssociatedTokenAccountIdempotentInstruction,
-    getAssociatedTokenAddressSync,
-} from '@solana/spl-token';
+import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync } from '@solana/spl-token';
 import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 
 import { fetchVault, fetchVaultPendingDepositsNullable, fetchVaultPendingWithdrawalsNullable } from '../state';
@@ -26,14 +22,12 @@ import {
     withExecuteTransferableVaultWithdrawal,
     deriveTransferableShareTokenAccount,
 } from '../instructions';
+import { withMintVaultUnderlyingFromTestService } from '../test-service';
 import type { GlowVault } from '../idls/glow_vault';
 import IDL from '../idls/glow_vault.json';
 
 const DEVNET_RPC_URL = 'https://api.devnet.solana.com';
 const VAULT_ADDRESS = new PublicKey('EzDmLUHTj53mSLN4BBrsuW8w3Gvc1iDGiYCXrkwm4vrR');
-
-const TEST_SERVICE_PROGRAM_ID = new PublicKey('test7JXXboKpc8hGTadvoXcFWN4xgnHLGANU92JKrwA');
-const TOKEN_REQUEST_DISCRIMINATOR = new Uint8Array([98, 39, 56, 30, 213, 98, 108, 244]);
 
 const USDC_DECIMALS = 6;
 const REQUEST_AMOUNT = 10_000 * 10 ** USDC_DECIMALS;
@@ -44,42 +38,6 @@ function loadWalletKeypair(): Keypair {
         process.env.SOLANA_KEYPAIR ?? resolve(process.env.HOME ?? '', '.config', 'solana', 'id.json');
     const secret = JSON.parse(readFileSync(path, 'utf-8'));
     return Keypair.fromSecretKey(Uint8Array.from(secret));
-}
-
-function deriveTokenInfoPda(mint: PublicKey): PublicKey {
-    const [pda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('token-info'), mint.toBuffer()],
-        TEST_SERVICE_PROGRAM_ID,
-    );
-    return pda;
-}
-
-function buildTokenRequestInstruction(
-    payer: PublicKey,
-    requester: PublicKey,
-    mint: PublicKey,
-    tokenProgram: PublicKey,
-    destination: PublicKey,
-    amount: bigint,
-): TransactionInstruction {
-    const data = new Uint8Array(8 + 8);
-    data.set(TOKEN_REQUEST_DISCRIMINATOR, 0);
-    new DataView(data.buffer).setBigUint64(8, amount, true);
-
-    const info = deriveTokenInfoPda(mint);
-
-    return new TransactionInstruction({
-        programId: TEST_SERVICE_PROGRAM_ID,
-        keys: [
-            { pubkey: payer, isSigner: true, isWritable: true },
-            { pubkey: requester, isSigner: false, isWritable: false },
-            { pubkey: mint, isSigner: false, isWritable: true },
-            { pubkey: info, isSigner: false, isWritable: false },
-            { pubkey: destination, isSigner: false, isWritable: true },
-            { pubkey: tokenProgram, isSigner: false, isWritable: false },
-        ],
-        data,
-    });
 }
 
 describe('transferrable vault deposit', () => {
@@ -103,38 +61,25 @@ describe('transferrable vault deposit', () => {
         const program = new Program<GlowVault>(IDL as GlowVault, provider);
 
         const vault = await fetchVault(program, VAULT_ADDRESS);
-        const underlyingMint = vault.account.underlyingMint;
-        const tokenProgram = vault.account.underlyingMintTokenProgram;
+        const mintInstructions: TransactionInstruction[] = [];
+        withMintVaultUnderlyingFromTestService({
+            vault,
+            destinationOwner: wallet.publicKey,
+            amount: BigInt(REQUEST_AMOUNT),
+            instructions: mintInstructions,
+        });
 
-        const destinationAta = getAssociatedTokenAddressSync(
-            underlyingMint,
-            wallet.publicKey,
-            false,
-            tokenProgram,
-            ASSOCIATED_TOKEN_PROGRAM_ID,
-        );
-
-        const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
-            wallet.publicKey,
-            destinationAta,
-            wallet.publicKey,
-            underlyingMint,
-            tokenProgram,
-            ASSOCIATED_TOKEN_PROGRAM_ID,
-        );
-
-        const tokenRequestIx = buildTokenRequestInstruction(
-            wallet.publicKey,
-            wallet.publicKey,
-            underlyingMint,
-            tokenProgram,
-            destinationAta,
-            BigInt(REQUEST_AMOUNT),
-        );
-
-        const requestTx = new Transaction().add(createAtaIx, tokenRequestIx);
+        const requestTx = new Transaction().add(...mintInstructions);
         const requestSig = await provider.sendAndConfirm(requestTx, [wallet]);
         assert.ok(requestSig, 'token_request transaction should confirm');
+
+        const destinationAta = getAssociatedTokenAddressSync(
+            vault.account.underlyingMint,
+            wallet.publicKey,
+            false,
+            vault.account.underlyingMintTokenProgram,
+            ASSOCIATED_TOKEN_PROGRAM_ID,
+        );
 
         const depositInstructions: TransactionInstruction[] = [];
         await withTransferableVaultDeposit({
