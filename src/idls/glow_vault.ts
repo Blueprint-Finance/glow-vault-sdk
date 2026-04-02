@@ -317,6 +317,121 @@ export type GlowVault = {
         },
         {
           "name": "mintTokenProgram"
+        },
+        {
+          "name": "pendingDeposits",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  112,
+                  101,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "withdrawer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vaultPendingDepositsCustody",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  115,
+                  95,
+                  99,
+                  117,
+                  115,
+                  116,
+                  111,
+                  100,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "epochTracker",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  112,
+                  111,
+                  99,
+                  104,
+                  95,
+                  116,
+                  114,
+                  97,
+                  99,
+                  107,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
         }
       ],
       "args": [
@@ -533,6 +648,37 @@ export type GlowVault = {
         },
         {
           "name": "mintTokenProgram"
+        },
+        {
+          "name": "epochTracker",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  112,
+                  111,
+                  99,
+                  104,
+                  95,
+                  116,
+                  114,
+                  97,
+                  99,
+                  107,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
         }
       ],
       "args": [
@@ -871,6 +1017,102 @@ export type GlowVault = {
         {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "closePendingDeposits",
+      "discriminator": [
+        227,
+        74,
+        234,
+        49,
+        64,
+        8,
+        179,
+        22
+      ],
+      "accounts": [
+        {
+          "name": "depositor",
+          "signer": true
+        },
+        {
+          "name": "receiver",
+          "writable": true
+        },
+        {
+          "name": "pendingDeposits",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  112,
+                  101,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "depositor"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
         }
       ],
       "args": []
@@ -2066,8 +2308,7 @@ export type GlowVault = {
           }
         },
         {
-          "name": "underlyingMint",
-          "writable": true
+          "name": "underlyingMint"
         },
         {
           "name": "vaultPendingWithdrawalsCustody",
@@ -2330,8 +2571,7 @@ export type GlowVault = {
           }
         },
         {
-          "name": "underlyingMint",
-          "writable": true
+          "name": "underlyingMint"
         },
         {
           "name": "vaultPendingWithdrawalsCustody",
@@ -2683,9 +2923,338 @@ export type GlowVault = {
         },
         {
           "name": "tokenProgram"
+        },
+        {
+          "name": "epochTracker",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  112,
+                  111,
+                  99,
+                  104,
+                  95,
+                  116,
+                  114,
+                  97,
+                  99,
+                  107,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
         }
       ],
       "args": [
+        {
+          "name": "shares",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initiateTransferableWithdrawalFromCustody",
+      "discriminator": [
+        248,
+        102,
+        113,
+        21,
+        190,
+        116,
+        253,
+        151
+      ],
+      "accounts": [
+        {
+          "name": "withdrawer",
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pendingWithdrawals",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  112,
+                  101,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  119,
+                  105,
+                  116,
+                  104,
+                  100,
+                  114,
+                  97,
+                  119,
+                  97,
+                  108,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "withdrawer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pendingDeposits",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  112,
+                  101,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "withdrawer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "shareMint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vaultPendingDepositsCustody",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  115,
+                  95,
+                  99,
+                  117,
+                  115,
+                  116,
+                  111,
+                  100,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vaultPendingWithdrawalsCustody",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  119,
+                  105,
+                  116,
+                  104,
+                  100,
+                  114,
+                  97,
+                  119,
+                  97,
+                  108,
+                  115,
+                  95,
+                  99,
+                  117,
+                  115,
+                  116,
+                  111,
+                  100,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "epochTracker",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  112,
+                  111,
+                  99,
+                  104,
+                  95,
+                  116,
+                  114,
+                  97,
+                  99,
+                  107,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "depositIndex",
+          "type": "u8"
+        },
         {
           "name": "shares",
           "type": "u64"
@@ -2895,6 +3464,37 @@ export type GlowVault = {
               {
                 "kind": "account",
                 "path": "withdrawer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "epochTracker",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  112,
+                  111,
+                  99,
+                  104,
+                  95,
+                  116,
+                  114,
+                  97,
+                  99,
+                  107,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
               }
             ]
           }
@@ -4067,7 +4667,6 @@ export type GlowVault = {
         },
         {
           "name": "vault",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -4425,11 +5024,13 @@ export type GlowVault = {
         {
           "name": "authority",
           "writable": true,
-          "signer": true
+          "signer": true,
+          "relations": [
+            "vault"
+          ]
         },
         {
-          "name": "vault",
-          "writable": true
+          "name": "vault"
         },
         {
           "name": "shareMint",
@@ -4576,7 +5177,8 @@ export type GlowVault = {
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "sysvarInstructions"
+          "name": "sysvarInstructions",
+          "address": "Sysvar1nstructions1111111111111111111111111"
         }
       ],
       "args": [
@@ -4756,6 +5358,19 @@ export type GlowVault = {
         87,
         200,
         88
+      ]
+    },
+    {
+      "name": "epochTracker",
+      "discriminator": [
+        224,
+        134,
+        45,
+        78,
+        214,
+        142,
+        233,
+        244
       ]
     },
     {
@@ -5058,6 +5673,19 @@ export type GlowVault = {
         35,
         243
       ]
+    },
+    {
+      "name": "withdrawalBumpedToNextEpoch",
+      "discriminator": [
+        212,
+        109,
+        166,
+        164,
+        47,
+        26,
+        206,
+        136
+      ]
     }
   ],
   "errors": [
@@ -5260,6 +5888,21 @@ export type GlowVault = {
       "code": 6039,
       "name": "withdrawalLimitExceeded",
       "msg": "Withdrawal exceeds the vault's per-transaction withdrawal limit"
+    },
+    {
+      "code": 6040,
+      "name": "depositRedemptionLockNotPassed",
+      "msg": "Deposit redemption lock period has not passed"
+    },
+    {
+      "code": 6041,
+      "name": "epochCapacityExceeded",
+      "msg": "Withdrawal does not fit in the current or next epoch"
+    },
+    {
+      "code": 6042,
+      "name": "epochTrackerRequired",
+      "msg": "EpochTracker account required for epoch withdrawal vaults"
     }
   ],
   "types": [
@@ -5552,6 +6195,55 @@ export type GlowVault = {
           {
             "name": "totalUserShares",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "epochSlot",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "settlementTs",
+            "type": "i64"
+          },
+          {
+            "name": "pendingShares",
+            "type": "u64"
+          },
+          {
+            "name": "epochLimit",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "epochTracker",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "thresholdBps",
+            "type": "u16"
+          },
+          {
+            "name": "epochs",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "epochSlot"
+                  }
+                },
+                6
+              ]
+            }
           }
         ]
       }
@@ -5949,6 +6641,10 @@ export type GlowVault = {
           {
             "name": "withdrawalWaitingPeriod",
             "type": "u32"
+          },
+          {
+            "name": "deliveryLockExpiry",
+            "type": "i64"
           }
         ]
       }
@@ -6988,9 +7684,46 @@ export type GlowVault = {
           }
         ]
       }
+    },
+    {
+      "name": "withdrawalBumpedToNextEpoch",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "withdrawer",
+            "type": "pubkey"
+          },
+          {
+            "name": "shares",
+            "type": "u64"
+          },
+          {
+            "name": "originalSettlement",
+            "type": "i64"
+          },
+          {
+            "name": "bumpedSettlement",
+            "type": "i64"
+          },
+          {
+            "name": "index",
+            "type": "u8"
+          }
+        ]
+      }
     }
   ],
   "constants": [
+    {
+      "name": "epochTrackerSeed",
+      "type": "bytes",
+      "value": "[101, 112, 111, 99, 104, 95, 116, 114, 97, 99, 107, 101, 114]"
+    },
     {
       "name": "vaultAccountProposalSeed",
       "type": "bytes",

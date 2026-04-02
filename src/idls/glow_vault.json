@@ -311,6 +311,121 @@
         },
         {
           "name": "mint_token_program"
+        },
+        {
+          "name": "pending_deposits",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  112,
+                  101,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "withdrawer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_pending_deposits_custody",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  115,
+                  95,
+                  99,
+                  117,
+                  115,
+                  116,
+                  111,
+                  100,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "epoch_tracker",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  112,
+                  111,
+                  99,
+                  104,
+                  95,
+                  116,
+                  114,
+                  97,
+                  99,
+                  107,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
         }
       ],
       "args": [
@@ -527,6 +642,37 @@
         },
         {
           "name": "mint_token_program"
+        },
+        {
+          "name": "epoch_tracker",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  112,
+                  111,
+                  99,
+                  104,
+                  95,
+                  116,
+                  114,
+                  97,
+                  99,
+                  107,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
         }
       ],
       "args": [
@@ -865,6 +1011,102 @@
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "close_pending_deposits",
+      "discriminator": [
+        227,
+        74,
+        234,
+        49,
+        64,
+        8,
+        179,
+        22
+      ],
+      "accounts": [
+        {
+          "name": "depositor",
+          "signer": true
+        },
+        {
+          "name": "receiver",
+          "writable": true
+        },
+        {
+          "name": "pending_deposits",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  112,
+                  101,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "depositor"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
         }
       ],
       "args": []
@@ -2060,8 +2302,7 @@
           }
         },
         {
-          "name": "underlying_mint",
-          "writable": true
+          "name": "underlying_mint"
         },
         {
           "name": "vault_pending_withdrawals_custody",
@@ -2324,8 +2565,7 @@
           }
         },
         {
-          "name": "underlying_mint",
-          "writable": true
+          "name": "underlying_mint"
         },
         {
           "name": "vault_pending_withdrawals_custody",
@@ -2677,9 +2917,338 @@
         },
         {
           "name": "token_program"
+        },
+        {
+          "name": "epoch_tracker",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  112,
+                  111,
+                  99,
+                  104,
+                  95,
+                  116,
+                  114,
+                  97,
+                  99,
+                  107,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
         }
       ],
       "args": [
+        {
+          "name": "shares",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initiate_transferable_withdrawal_from_custody",
+      "discriminator": [
+        248,
+        102,
+        113,
+        21,
+        190,
+        116,
+        253,
+        151
+      ],
+      "accounts": [
+        {
+          "name": "withdrawer",
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pending_withdrawals",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  112,
+                  101,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  119,
+                  105,
+                  116,
+                  104,
+                  100,
+                  114,
+                  97,
+                  119,
+                  97,
+                  108,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "withdrawer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pending_deposits",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  112,
+                  101,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "withdrawer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "share_mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_pending_deposits_custody",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  115,
+                  95,
+                  99,
+                  117,
+                  115,
+                  116,
+                  111,
+                  100,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_pending_withdrawals_custody",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  119,
+                  105,
+                  116,
+                  104,
+                  100,
+                  114,
+                  97,
+                  119,
+                  97,
+                  108,
+                  115,
+                  95,
+                  99,
+                  117,
+                  115,
+                  116,
+                  111,
+                  100,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "epoch_tracker",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  112,
+                  111,
+                  99,
+                  104,
+                  95,
+                  116,
+                  114,
+                  97,
+                  99,
+                  107,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "deposit_index",
+          "type": "u8"
+        },
         {
           "name": "shares",
           "type": "u64"
@@ -2889,6 +3458,37 @@
               {
                 "kind": "account",
                 "path": "withdrawer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "epoch_tracker",
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  112,
+                  111,
+                  99,
+                  104,
+                  95,
+                  116,
+                  114,
+                  97,
+                  99,
+                  107,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
               }
             ]
           }
@@ -4061,7 +4661,6 @@
         },
         {
           "name": "vault",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -4419,11 +5018,13 @@
         {
           "name": "authority",
           "writable": true,
-          "signer": true
+          "signer": true,
+          "relations": [
+            "vault"
+          ]
         },
         {
-          "name": "vault",
-          "writable": true
+          "name": "vault"
         },
         {
           "name": "share_mint",
@@ -4570,7 +5171,8 @@
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "sysvar_instructions"
+          "name": "sysvar_instructions",
+          "address": "Sysvar1nstructions1111111111111111111111111"
         }
       ],
       "args": [
@@ -4750,6 +5352,19 @@
         87,
         200,
         88
+      ]
+    },
+    {
+      "name": "EpochTracker",
+      "discriminator": [
+        224,
+        134,
+        45,
+        78,
+        214,
+        142,
+        233,
+        244
       ]
     },
     {
@@ -5052,6 +5667,19 @@
         35,
         243
       ]
+    },
+    {
+      "name": "WithdrawalBumpedToNextEpoch",
+      "discriminator": [
+        212,
+        109,
+        166,
+        164,
+        47,
+        26,
+        206,
+        136
+      ]
     }
   ],
   "errors": [
@@ -5254,6 +5882,21 @@
       "code": 6039,
       "name": "WithdrawalLimitExceeded",
       "msg": "Withdrawal exceeds the vault's per-transaction withdrawal limit"
+    },
+    {
+      "code": 6040,
+      "name": "DepositRedemptionLockNotPassed",
+      "msg": "Deposit redemption lock period has not passed"
+    },
+    {
+      "code": 6041,
+      "name": "EpochCapacityExceeded",
+      "msg": "Withdrawal does not fit in the current or next epoch"
+    },
+    {
+      "code": 6042,
+      "name": "EpochTrackerRequired",
+      "msg": "EpochTracker account required for epoch withdrawal vaults"
     }
   ],
   "types": [
@@ -5546,6 +6189,55 @@
           {
             "name": "total_user_shares",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EpochSlot",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "settlement_ts",
+            "type": "i64"
+          },
+          {
+            "name": "pending_shares",
+            "type": "u64"
+          },
+          {
+            "name": "epoch_limit",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EpochTracker",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "threshold_bps",
+            "type": "u16"
+          },
+          {
+            "name": "epochs",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "EpochSlot"
+                  }
+                },
+                6
+              ]
+            }
           }
         ]
       }
@@ -5943,6 +6635,10 @@
           {
             "name": "withdrawal_waiting_period",
             "type": "u32"
+          },
+          {
+            "name": "delivery_lock_expiry",
+            "type": "i64"
           }
         ]
       }
@@ -6982,9 +7678,46 @@
           }
         ]
       }
+    },
+    {
+      "name": "WithdrawalBumpedToNextEpoch",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "withdrawer",
+            "type": "pubkey"
+          },
+          {
+            "name": "shares",
+            "type": "u64"
+          },
+          {
+            "name": "original_settlement",
+            "type": "i64"
+          },
+          {
+            "name": "bumped_settlement",
+            "type": "i64"
+          },
+          {
+            "name": "index",
+            "type": "u8"
+          }
+        ]
+      }
     }
   ],
   "constants": [
+    {
+      "name": "EPOCH_TRACKER_SEED",
+      "type": "bytes",
+      "value": "[101, 112, 111, 99, 104, 95, 116, 114, 97, 99, 107, 101, 114]"
+    },
     {
       "name": "VAULT_ACCOUNT_PROPOSAL_SEED",
       "type": "bytes",
