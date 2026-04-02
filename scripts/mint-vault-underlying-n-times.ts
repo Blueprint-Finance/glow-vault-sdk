@@ -20,9 +20,7 @@ import type { GlowVault } from '../src/idls/glow_vault';
 import IDL from '../src/idls/glow_vault.json';
 
 const DEVNET_RPC_URL = process.env.DEVNET_RPC_URL ?? 'https://api.devnet.solana.com';
-const VAULT_ADDRESS = new PublicKey(
-    process.env.VAULT_ADDRESS ?? 'EzDmLUHTj53mSLN4BBrsuW8w3Gvc1iDGiYCXrkwm4vrR',
-);
+const VAULT_ADDRESS = new PublicKey(process.env.VAULT_ADDRESS ?? 'EzDmLUHTj53mSLN4BBrsuW8w3Gvc1iDGiYCXrkwm4vrR');
 
 const USDC_DECIMALS = 6;
 /** Amount per transaction in smallest units (default 10_000 USDC). */
@@ -30,8 +28,7 @@ const AMOUNT_PER_RUN = BigInt(process.env.AMOUNT ?? String(10_000 * 10 ** USDC_D
 const COUNT = Math.max(1, Number(process.env.COUNT ?? 10));
 
 function loadWalletKeypair(): Keypair {
-    const path =
-        process.env.SOLANA_KEYPAIR ?? resolve(process.env.HOME ?? '', '.config', 'solana', 'id.json');
+    const path = process.env.SOLANA_KEYPAIR ?? resolve(process.env.HOME ?? '', '.config', 'solana', 'id.json');
     const secret = JSON.parse(readFileSync(path, 'utf-8'));
     return Keypair.fromSecretKey(Uint8Array.from(secret));
 }

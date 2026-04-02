@@ -53,18 +53,14 @@ export type PendingWithdrawals = {
     account: PendingWithdrawalsAccount;
 };
 
-export type PendingDepositsAccount = Awaited<
-    ReturnType<Program<GlowVault>['account']['pendingDeposits']['fetch']>
->;
+export type PendingDepositsAccount = Awaited<ReturnType<Program<GlowVault>['account']['pendingDeposits']['fetch']>>;
 
 export type PendingDeposits = {
     address: PublicKey;
     account: PendingDepositsAccount;
 };
 
-export type EpochTrackerAccount = Awaited<
-    ReturnType<Program<GlowVault>['account']['epochTracker']['fetch']>
->;
+export type EpochTrackerAccount = Awaited<ReturnType<Program<GlowVault>['account']['epochTracker']['fetch']>>;
 
 export type EpochSlot = EpochTrackerAccount['epochs'][number];
 

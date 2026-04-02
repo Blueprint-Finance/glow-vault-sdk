@@ -82,41 +82,42 @@ An example response from the endpoint is shown below.
 
 ```json
 {
-  "name": "Maple SyrupUSDC",
-  "address": "fEM3AFDMxZBFPGucL8uJutEWC2MRNjpHJPWPX2PcqjK",
-  "acceptsDeposits": true,
-  "acceptsWithdrawals": true,
-  "apy": {
-    "7": -0.00999922279231638, // the 7 and 30 day APY and APR are tracked
-    "30": -0.00999607065517712,
-    "7rewards": 9.49000077720768, // if there are rewards, they are added to the APY & APR
-    "30rewards": 9.49000392934482,
-    "lastUpdated": 1770938826000
-  },
-  "apr": {
-    "7": -0.00994953238095342,
-    "30": -0.00994641151570974,
-    "7rewards": -0.00994953238095342,
-    "30rewards": -0.00994641151570974,
-    "lastUpdated": 1770938826000
-  },
-  "exchangeRate": 1.0107943059,
-  "shareMint": "DT1SEWR5zCq32qXXwJcnGRrqtCcGayJWWRbLNLfpBDKH",
-  "depositTokens": [ // Array for future support of multi-token vaults. The team currently plans to support single tokens for now.
-    {
-      "symbol": "SyrupUSDC",
-      "name": "SyrupUSDC",
-      "address": "Cu5hn1k9FeHoJN2rpo2xvSwNSuphuGMQvxt566cYKVni",
-      "decimals": 6,
-      "precision": 3,
-      "tokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-      "minimumDeposit": 10000000, // In the mint's decimal units, 
-      "availableTokens": 82839082222,
-      "depositLimit": 10000000000000,
-      "depositAmount": 82839082222,
-      "pendingWithdrawals": 7553468465
-    }
-  ]
+    "name": "Maple SyrupUSDC",
+    "address": "fEM3AFDMxZBFPGucL8uJutEWC2MRNjpHJPWPX2PcqjK",
+    "acceptsDeposits": true,
+    "acceptsWithdrawals": true,
+    "apy": {
+        "7": -0.00999922279231638, // the 7 and 30 day APY and APR are tracked
+        "30": -0.00999607065517712,
+        "7rewards": 9.49000077720768, // if there are rewards, they are added to the APY & APR
+        "30rewards": 9.49000392934482,
+        "lastUpdated": 1770938826000
+    },
+    "apr": {
+        "7": -0.00994953238095342,
+        "30": -0.00994641151570974,
+        "7rewards": -0.00994953238095342,
+        "30rewards": -0.00994641151570974,
+        "lastUpdated": 1770938826000
+    },
+    "exchangeRate": 1.0107943059,
+    "shareMint": "DT1SEWR5zCq32qXXwJcnGRrqtCcGayJWWRbLNLfpBDKH",
+    "depositTokens": [
+        // Array for future support of multi-token vaults. The team currently plans to support single tokens for now.
+        {
+            "symbol": "SyrupUSDC",
+            "name": "SyrupUSDC",
+            "address": "Cu5hn1k9FeHoJN2rpo2xvSwNSuphuGMQvxt566cYKVni",
+            "decimals": 6,
+            "precision": 3,
+            "tokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "minimumDeposit": 10000000, // In the mint's decimal units,
+            "availableTokens": 82839082222,
+            "depositLimit": 10000000000000,
+            "depositAmount": 82839082222,
+            "pendingWithdrawals": 7553468465
+        }
+    ]
 }
 ```
 
@@ -203,17 +204,17 @@ type VaultAccount = {
     // Shares earmarked for those same frozen withdrawals
     reservedWithdrawalShares: BN;
     reserved: number[];
-}
+};
 ```
 
 The `flags` field is a bitfield that controls vault behaviour. The flags relevant to transferable vaults are:
 
-| Bit | Name | Description |
-| --- | --- | --- |
-| `1 << 3` | `SHARES_TRANSFERABLE` | Shares are freely transferable tokens held in user wallets |
-| `1 << 4` | `DEPOSIT_TIME_LOCK_ENABLED` | Deposits are escrowed and time-locked before delivery |
-| `1 << 5` | `EPOCH_WITHDRAWALS` | Withdrawals follow a fixed epoch schedule |
-| `1 << 6` | `FREEZE_WITHDRAWAL_YIELD` | Withdrawal payout is locked at the initiation-time exchange rate |
+| Bit      | Name                        | Description                                                      |
+| -------- | --------------------------- | ---------------------------------------------------------------- |
+| `1 << 3` | `SHARES_TRANSFERABLE`       | Shares are freely transferable tokens held in user wallets       |
+| `1 << 4` | `DEPOSIT_TIME_LOCK_ENABLED` | Deposits are escrowed and time-locked before delivery            |
+| `1 << 5` | `EPOCH_WITHDRAWALS`         | Withdrawals follow a fixed epoch schedule                        |
+| `1 << 6` | `FREEZE_WITHDRAWAL_YIELD`   | Withdrawal payout is locked at the initiation-time exchange rate |
 
 #### Fetch a Single Vault
 
@@ -328,7 +329,7 @@ type VaultUserAccount = {
     // i64 timestamp
     lastUpdateTimestamp: BN;
     bump: number;
-}
+};
 ```
 
 ### Deriving VaultUser Address
@@ -384,7 +385,7 @@ type PendingWithdrawal = {
     withdrawalRequestTimestamp: BN;
     // in seconds, add to withdrawalRequestTimestamp to get the timestamp when the withdrawal will be ready
     withdrawalWaitingPeriod: number;
-}
+};
 
 type PendingWithdrawalsAccount = {
     owner: PublicKey;
@@ -400,7 +401,7 @@ type PendingWithdrawalsAccount = {
     // Fixed size array of 8 pending withdrawals
     // If values are 0, the slot is empty
     withdrawals: PendingWithdrawal[];
-}
+};
 ```
 
 ### Deriving Pending Withdrawals Address
@@ -436,7 +437,7 @@ type PendingDeposit = {
     // Snapshotted from the vault config at deposit time
     deliveryWaitingPeriod: number;
     redemptionWaitingPeriod: number;
-}
+};
 
 type PendingDepositsAccount = {
     owner: PublicKey;
@@ -445,7 +446,7 @@ type PendingDepositsAccount = {
     // Fixed size array of 8 pending deposits
     // If values are 0, the slot is empty
     deposits: PendingDeposit[];
-}
+};
 ```
 
 ### Deriving Pending Deposits Address
@@ -480,7 +481,7 @@ type EpochSlot = {
     pendingShares: BN;
     // Maximum shares that can be withdrawn in this epoch
     epochLimit: BN;
-}
+};
 
 type EpochTrackerAccount = {
     vault: PublicKey;
@@ -488,7 +489,7 @@ type EpochTrackerAccount = {
     thresholdBps: number;
     // Fixed size array of 6 epoch slots
     epochs: EpochSlot[];
-}
+};
 ```
 
 ### Deriving Epoch Tracker Address
@@ -876,31 +877,31 @@ import type { Vault, VaultUser, PendingWithdrawals, PendingDeposits, EpochTracke
 type Vault = {
     address: PublicKey;
     account: VaultAccount;
-}
+};
 
 // VaultUser wrapper
 type VaultUser = {
     address: PublicKey;
     account: VaultUserAccount;
-}
+};
 
 // PendingWithdrawals wrapper
 type PendingWithdrawals = {
     address: PublicKey;
     account: PendingWithdrawalsAccount;
-}
+};
 
 // PendingDeposits wrapper (transferable vaults with time-locked deposits)
 type PendingDeposits = {
     address: PublicKey;
     account: PendingDepositsAccount;
-}
+};
 
 // EpochTracker wrapper (vaults with epoch-based withdrawals)
 type EpochTracker = {
     address: PublicKey;
     account: EpochTrackerAccount;
-}
+};
 ```
 
 ### Raw Account Types
@@ -924,38 +925,38 @@ import type { VaultBalances, VaultExchangeRate, VaultUserBalance, VaultWithBalan
 
 // VaultBalances - calculated from vault account
 type VaultBalances = {
-    totalTokens: BN;       // depositTokens + operatorTokens
+    totalTokens: BN; // depositTokens + operatorTokens
     totalShares: BN;
     depositTokens: BN;
     operatorTokens: BN;
     uncollectedManagementFees: BN;
     uncollectedPerformanceFees: BN;
     realisedPerformanceFees: BN;
-}
+};
 
 // VaultExchangeRate - ratio of tokens to shares
 type VaultExchangeRate = {
-    numerator: BN;    // totalTokens
-    denominator: BN;  // totalShares
-}
+    numerator: BN; // totalTokens
+    denominator: BN; // totalShares
+};
 
 // VaultWithBalances - vault with calculated balances
 type VaultWithBalances = Vault & {
     balances: VaultBalances;
     exchangeRate: VaultExchangeRate | null;
-}
+};
 
 // VaultUserBalance - user balance with token amounts
 type VaultUserBalance = {
     totalShares: BN;
     pendingShares: BN;
     availableShares: BN;
-    totalTokens: BN | null;      // null if exchange rate unavailable
+    totalTokens: BN | null; // null if exchange rate unavailable
     pendingTokens: BN | null;
     availableTokens: BN | null;
     accruedPerformanceFees: BN;
     exchangeRate: VaultExchangeRate | null;
-}
+};
 ```
 
 ## Running Tests

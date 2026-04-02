@@ -34,8 +34,7 @@ const REQUEST_AMOUNT = 10_000 * 10 ** USDC_DECIMALS;
 const DEPOSIT_AMOUNT = 5_000 * 10 ** USDC_DECIMALS;
 
 function loadWalletKeypair(): Keypair {
-    const path =
-        process.env.SOLANA_KEYPAIR ?? resolve(process.env.HOME ?? '', '.config', 'solana', 'id.json');
+    const path = process.env.SOLANA_KEYPAIR ?? resolve(process.env.HOME ?? '', '.config', 'solana', 'id.json');
     const secret = JSON.parse(readFileSync(path, 'utf-8'));
     return Keypair.fromSecretKey(Uint8Array.from(secret));
 }
@@ -94,17 +93,12 @@ describe('transferrable vault deposit', () => {
         const depositSig = await provider.sendAndConfirm(depositTx, [wallet]);
         assert.ok(depositSig, 'deposit transaction should confirm');
 
-        const pendingDepositsResult = await fetchVaultPendingDepositsNullable(
-            program,
-            vault.address,
-            wallet.publicKey,
-        );
+        const pendingDepositsResult = await fetchVaultPendingDepositsNullable(program, vault.address, wallet.publicKey);
         const totalPendingShares =
             pendingDepositsResult?.account &&
             ((pendingDepositsResult.account as { total_pending_shares?: BN }).total_pending_shares ??
                 (pendingDepositsResult.account as { totalPendingShares?: BN }).totalPendingShares);
-        const hasPendingDeposit =
-            totalPendingShares != null && !totalPendingShares.isZero();
+        const hasPendingDeposit = totalPendingShares != null && !totalPendingShares.isZero();
 
         const shareAta = deriveTransferableShareTokenAccount(vault, wallet.publicKey);
         const shareBalance = await connection.getTokenAccountBalance(shareAta);
@@ -138,8 +132,7 @@ describe('transferrable vault deposit', () => {
         const withdrawalWaitingPeriod =
             (vault.account as { withdrawalWaitingPeriod?: BN }).withdrawalWaitingPeriod ??
             (vault.account as { withdrawal_waiting_period?: BN }).withdrawal_waiting_period;
-        const waitingPeriodSeconds =
-            withdrawalWaitingPeriod != null ? withdrawalWaitingPeriod.toNumber() : 0;
+        const waitingPeriodSeconds = withdrawalWaitingPeriod != null ? withdrawalWaitingPeriod.toNumber() : 0;
 
         if (waitingPeriodSeconds === 0) {
             const executeIxs: TransactionInstruction[] = [];
@@ -152,23 +145,16 @@ describe('transferrable vault deposit', () => {
             });
 
             const underlyingBefore = await connection.getTokenAccountBalance(destinationAta);
-            const beforeAmount = underlyingBefore?.value?.amount
-                ? BigInt(underlyingBefore.value.amount)
-                : 0n;
+            const beforeAmount = underlyingBefore?.value?.amount ? BigInt(underlyingBefore.value.amount) : 0n;
 
             const executeTx = new Transaction().add(...executeIxs);
             const executeSig = await provider.sendAndConfirm(executeTx, [wallet]);
             assert.ok(executeSig, 'execute transferable vault withdrawal should confirm');
 
             const underlyingAfter = await connection.getTokenAccountBalance(destinationAta);
-            const afterAmount = underlyingAfter?.value?.amount
-                ? BigInt(underlyingAfter.value.amount)
-                : 0n;
+            const afterAmount = underlyingAfter?.value?.amount ? BigInt(underlyingAfter.value.amount) : 0n;
 
-            assert.ok(
-                afterAmount > beforeAmount,
-                'underlying token balance should increase after withdrawal',
-            );
+            assert.ok(afterAmount > beforeAmount, 'underlying token balance should increase after withdrawal');
         } else {
             const pendingWithdrawals = await fetchVaultPendingWithdrawalsNullable(
                 program,

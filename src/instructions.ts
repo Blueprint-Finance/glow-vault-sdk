@@ -347,9 +347,7 @@ const EPOCH_WITHDRAWALS = 1 << 5;
  * Returns the derived address when the EPOCH_WITHDRAWALS flag is set, null otherwise.
  */
 function resolveEpochTracker(vault: Vault): PublicKey | null {
-    return (Number(vault.account.flags) & EPOCH_WITHDRAWALS) !== 0
-        ? deriveEpochTracker(vault.address)
-        : null;
+    return (Number(vault.account.flags) & EPOCH_WITHDRAWALS) !== 0 ? deriveEpochTracker(vault.address) : null;
 }
 
 /**
