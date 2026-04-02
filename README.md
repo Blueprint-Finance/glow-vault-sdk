@@ -468,6 +468,49 @@ const pendingDeposits = await fetchVaultPendingDeposits(program, vaultAddress, d
 const maybePendingDeposits = await fetchVaultPendingDepositsNullable(program, vaultAddress, depositorAddress);
 ```
 
+## Epoch Tracker
+
+Vaults that use epoch-based withdrawals have an `EpochTracker` account that governs withdrawal scheduling.
+
+```ts
+type EpochSlot = {
+    // Unix timestamp when this epoch settles
+    settlementTs: BN;
+    // Shares queued for withdrawal in this epoch
+    pendingShares: BN;
+    // Maximum shares that can be withdrawn in this epoch
+    epochLimit: BN;
+}
+
+type EpochTrackerAccount = {
+    vault: PublicKey;
+    // Threshold in basis points for epoch withdrawal limits
+    thresholdBps: number;
+    // Fixed size array of 6 epoch slots
+    epochs: EpochSlot[];
+}
+```
+
+### Deriving Epoch Tracker Address
+
+```typescript
+import { deriveEpochTracker } from 'glow-vaults-sdk';
+
+const epochTrackerAddress = deriveEpochTracker(vaultAddress);
+```
+
+### Fetching Epoch Tracker
+
+```typescript
+import { fetchEpochTracker, fetchEpochTrackerNullable } from 'glow-vaults-sdk';
+
+// Throws if not found
+const epochTracker = await fetchEpochTracker(program, vaultAddress);
+
+// Returns null if not found (vault may not use epoch withdrawals)
+const maybeEpochTracker = await fetchEpochTrackerNullable(program, vaultAddress);
+```
+
 ## Instructions
 
 The SDK provides instruction helpers for both standard vaults and transferable vaults.
@@ -553,6 +596,26 @@ await withCancelVaultPendingWithdrawal({
     owner: wallet.publicKey,
     instructions,
     withdrawalIndex: 0,
+});
+
+const tx = new Transaction().add(...instructions);
+await provider.sendAndConfirm(tx);
+```
+
+### Close Pending Withdrawal
+
+Close an empty pending withdrawals account and reclaim rent. Only works when all withdrawal slots are empty.
+
+```typescript
+import { withClosePendingWithdrawal } from 'glow-vaults-sdk';
+
+const instructions: TransactionInstruction[] = [];
+
+await withClosePendingWithdrawal({
+    program,
+    vault,
+    withdrawer: wallet.publicKey,
+    instructions,
 });
 
 const tx = new Transaction().add(...instructions);
@@ -713,6 +776,49 @@ const tx = new Transaction().add(...instructions);
 await provider.sendAndConfirm(tx);
 ```
 
+#### Initiate Transferable Withdrawal From Custody
+
+Withdraw directly from deposit custody during the lock-in period. Shares move from deposit custody to withdrawal custody. The pending deposits account is automatically closed when it becomes empty.
+
+```typescript
+import { withInitiateTransferableWithdrawalFromCustody } from 'glow-vaults-sdk';
+
+const instructions: TransactionInstruction[] = [];
+
+await withInitiateTransferableWithdrawalFromCustody({
+    program,
+    connection,
+    vault,
+    withdrawer: wallet.publicKey,
+    instructions,
+    depositIndex: 0, // Index of the pending deposit to withdraw from
+    shares: new BN(500_000), // Share amount to withdraw
+});
+
+const tx = new Transaction().add(...instructions);
+await provider.sendAndConfirm(tx);
+```
+
+#### Close Pending Deposits
+
+Close an empty pending deposits account and reclaim rent. This is called automatically by `withClaimDepositedShares` and `withInitiateTransferableWithdrawalFromCustody` when the account becomes empty, but can be called manually.
+
+```typescript
+import { withClosePendingDeposits } from 'glow-vaults-sdk';
+
+const instructions: TransactionInstruction[] = [];
+
+await withClosePendingDeposits({
+    program,
+    vault,
+    depositor: wallet.publicKey,
+    instructions,
+});
+
+const tx = new Transaction().add(...instructions);
+await provider.sendAndConfirm(tx);
+```
+
 #### Derive Transferable Share Token Account
 
 You can derive the share token ATA for a transferable vault user directly:
@@ -764,7 +870,7 @@ The SDK wraps raw IDL-decoded account data with their addresses for convenience.
 All fetch functions return wrapper types that include both the account address and the decoded data:
 
 ```typescript
-import type { Vault, VaultUser, PendingWithdrawals, PendingDeposits } from 'glow-vaults-sdk';
+import type { Vault, VaultUser, PendingWithdrawals, PendingDeposits, EpochTracker } from 'glow-vaults-sdk';
 
 // Vault wrapper - includes address and account data
 type Vault = {
@@ -789,6 +895,12 @@ type PendingDeposits = {
     address: PublicKey;
     account: PendingDepositsAccount;
 }
+
+// EpochTracker wrapper (vaults with epoch-based withdrawals)
+type EpochTracker = {
+    address: PublicKey;
+    account: EpochTrackerAccount;
+}
 ```
 
 ### Raw Account Types
@@ -801,6 +913,7 @@ import type {
     VaultUserAccount,
     PendingWithdrawalsAccount,
     PendingDepositsAccount,
+    EpochTrackerAccount,
 } from 'glow-vaults-sdk';
 ```
 

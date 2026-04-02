@@ -108,13 +108,6 @@ export function withMintVaultUnderlyingFromTestService({
     );
 
     instructions.push(
-        buildTokenRequestInstruction(
-            payerKey,
-            destinationOwner,
-            mint,
-            tokenProgram,
-            destinationAta,
-            amount,
-        ),
+        buildTokenRequestInstruction(payerKey, destinationOwner, mint, tokenProgram, destinationAta, amount),
     );
 }

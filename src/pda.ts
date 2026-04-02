@@ -47,3 +47,7 @@ export function deriveVaultPendingDepositsCustody(vault: Address): PublicKey {
 export function deriveVaultPendingWithdrawalsCustody(vault: Address): PublicKey {
     return findDerivedAccount(GLOW_VAULT_ID, 'vault_withdrawals_custody', vault);
 }
+
+export function deriveEpochTracker(vault: Address): PublicKey {
+    return findDerivedAccount(GLOW_VAULT_ID, 'epoch_tracker', vault);
+}

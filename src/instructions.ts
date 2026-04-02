@@ -25,13 +25,14 @@ import {
 } from '@solana/spl-token';
 import { PublicKey, SystemProgram } from '@solana/web3.js';
 
-import { translateAddress } from '@coral-xyz/anchor';
-import type { Address, BN, Program } from '@coral-xyz/anchor';
+import { translateAddress, BN } from '@coral-xyz/anchor';
+import type { Address, Program } from '@coral-xyz/anchor';
 import type { Connection, TransactionInstruction } from '@solana/web3.js';
 import type { GlowVault } from './idls/glow_vault';
 import type { Vault } from './state';
 
 import {
+    deriveEpochTracker,
     deriveVaultPendingDeposits,
     deriveVaultPendingDepositsCustody,
     deriveVaultPendingWithdrawals,
@@ -211,6 +212,7 @@ export async function withInitiateVaultWithdrawal({
             shareTokenAccount,
             tokenProgram: TOKEN_2022_PROGRAM_ID,
             vaultUser,
+            epochTracker: resolveEpochTracker(vault),
         })
         .instruction();
     instructions.push(instruction);
@@ -312,6 +314,7 @@ export async function withCancelVaultPendingWithdrawal({
                 vaultUser,
                 destinationShareTokenAccount: deriveShareTokenAccount(vault, owner, false),
                 mintTokenProgram: TOKEN_2022_PROGRAM_ID,
+                epochTracker: resolveEpochTracker(vault),
             })
             .instruction(),
     );
@@ -337,6 +340,17 @@ export async function withUpdateVaultBalances({
 }
 
 const DEPOSIT_TIME_LOCK_ENABLED = 1 << 4;
+const EPOCH_WITHDRAWALS = 1 << 5;
+
+/**
+ * Resolve the epoch tracker PDA if the vault uses epoch-based withdrawals.
+ * Returns the derived address when the EPOCH_WITHDRAWALS flag is set, null otherwise.
+ */
+function resolveEpochTracker(vault: Vault): PublicKey | null {
+    return (Number(vault.account.flags) & EPOCH_WITHDRAWALS) !== 0
+        ? deriveEpochTracker(vault.address)
+        : null;
+}
 
 /**
  * Deposit from a wallet into a transferable vault.
@@ -450,6 +464,7 @@ export async function withClaimDepositedShares({
 }) {
     const shareMint = deriveVaultShareMint(vault.address);
     const shareTokenAccount = deriveTransferableShareTokenAccount(vault, depositor);
+    const pendingDepositsAddress = deriveVaultPendingDeposits(vault.address, depositor);
 
     const shareTokenAccountInfo = await program.provider.connection.getAccountInfo(shareTokenAccount);
     if (!shareTokenAccountInfo) {
@@ -465,13 +480,17 @@ export async function withClaimDepositedShares({
         );
     }
 
+    const pendingDepositsAccount = await program.account.pendingDeposits.fetch(pendingDepositsAddress);
+    const slotShares = pendingDepositsAccount.deposits[depositIndex]?.pendingShares;
+    const willBeEmpty = slotShares && pendingDepositsAccount.totalPendingShares.sub(slotShares).isZero();
+
     instructions.push(
         await program.methods
             .claimDepositedShares(depositIndex)
             .accountsPartial({
                 depositor,
                 vault: vault.address,
-                pendingDeposits: deriveVaultPendingDeposits(vault.address, depositor),
+                pendingDeposits: pendingDepositsAddress,
                 shareMint,
                 shareTokenAccount,
                 vaultPendingDepositsCustody: deriveVaultPendingDepositsCustody(vault.address),
@@ -479,6 +498,86 @@ export async function withClaimDepositedShares({
             })
             .instruction(),
     );
+
+    if (willBeEmpty) {
+        await withClosePendingDeposits({ program, vault, depositor, instructions });
+    }
+}
+
+/**
+ * Initiate a withdrawal from a transferable vault, automatically sourcing
+ * shares from the wallet and/or deposit custody as needed.
+ *
+ * - Shares already in the wallet are withdrawn first via
+ *   `withInitiateTransferableVaultWithdrawal`.
+ * - Any remaining amount is pulled from locked deposit custody slots
+ *   (oldest first) via `withInitiateTransferableWithdrawalFromCustody`.
+ */
+export async function withInitiateTransferableWithdrawal({
+    program,
+    connection,
+    vault,
+    withdrawer,
+    instructions,
+    amount,
+}: {
+    program: Program<GlowVault>;
+    connection: Connection;
+    vault: Vault;
+    withdrawer: PublicKey;
+    instructions: TransactionInstruction[];
+    amount: BN;
+}) {
+    const shareAta = deriveTransferableShareTokenAccount(vault, withdrawer);
+    const ataInfo = await connection.getTokenAccountBalance(shareAta).catch(() => null);
+    const walletShares = ataInfo ? new BN(ataInfo.value.amount) : new BN(0);
+
+    if (walletShares.gte(amount)) {
+        await withInitiateTransferableVaultWithdrawal({
+            program,
+            connection,
+            vault,
+            withdrawer,
+            instructions,
+            amount,
+        });
+        return;
+    }
+
+    // Withdraw whatever is in the wallet first
+    let remaining = amount;
+    if (walletShares.gt(new BN(0))) {
+        await withInitiateTransferableVaultWithdrawal({
+            program,
+            connection,
+            vault,
+            withdrawer,
+            instructions,
+            amount: walletShares,
+        });
+        remaining = remaining.sub(walletShares);
+    }
+
+    // Pull the rest from deposit custody slots, oldest first
+    const pendingDepositsAddress = deriveVaultPendingDeposits(vault.address, withdrawer);
+    const pendingDepositsAccount = await program.account.pendingDeposits.fetch(pendingDepositsAddress);
+
+    for (let i = 0; i < pendingDepositsAccount.deposits.length && remaining.gt(new BN(0)); i++) {
+        const slot = pendingDepositsAccount.deposits[i];
+        if (!slot || slot.pendingShares.isZero()) continue;
+
+        const toWithdraw = BN.min(remaining, slot.pendingShares);
+        await withInitiateTransferableWithdrawalFromCustody({
+            program,
+            connection,
+            vault,
+            withdrawer,
+            instructions,
+            depositIndex: i,
+            shares: toWithdraw,
+        });
+        remaining = remaining.sub(toWithdraw);
+    }
 }
 
 /**
@@ -532,6 +631,7 @@ export async function withInitiateTransferableVaultWithdrawal({
                 shareTokenAccount: deriveTransferableShareTokenAccount(vault, withdrawer),
                 vaultPendingWithdrawalsCustody: deriveVaultPendingWithdrawalsCustody(vault.address),
                 tokenProgram: TOKEN_2022_PROGRAM_ID,
+                epochTracker: resolveEpochTracker(vault),
             })
             .instruction(),
     );
@@ -627,6 +727,131 @@ export async function withCancelTransferableVaultPendingWithdrawal({
                 vaultPendingWithdrawalsCustody: deriveVaultPendingWithdrawalsCustody(vault.address),
                 destinationShareTokenAccount: deriveTransferableShareTokenAccount(vault, owner),
                 mintTokenProgram: TOKEN_2022_PROGRAM_ID,
+                pendingDeposits: deriveVaultPendingDeposits(vault.address, owner),
+                vaultPendingDepositsCustody: deriveVaultPendingDepositsCustody(vault.address),
+                epochTracker: resolveEpochTracker(vault),
+            })
+            .instruction(),
+    );
+}
+
+/**
+ * Initiate a withdrawal directly from deposit custody (during lock-in period).
+ *
+ * Shares move from deposit custody to withdrawal custody. Auto-creates the
+ * pending withdrawals account if it does not exist. Closes the pending deposits
+ * account when no deposits remain.
+ */
+export async function withInitiateTransferableWithdrawalFromCustody({
+    program,
+    connection,
+    vault,
+    withdrawer,
+    instructions,
+    depositIndex,
+    shares,
+}: {
+    program: Program<GlowVault>;
+    connection: Connection;
+    vault: Vault;
+    withdrawer: PublicKey;
+    instructions: TransactionInstruction[];
+    depositIndex: number;
+    shares: BN;
+}) {
+    await withUpdateVaultBalances({ program, instructions, vault });
+
+    const pendingDepositsAddress = deriveVaultPendingDeposits(vault.address, withdrawer);
+    const pendingWithdrawals = deriveVaultPendingWithdrawals(vault.address, withdrawer);
+    const pendingWithdrawalsAccount = await connection.getAccountInfo(pendingWithdrawals);
+    if (!pendingWithdrawalsAccount) {
+        await withCreateVaultPendingWithdrawal({
+            program,
+            vault,
+            payer: withdrawer,
+            withdrawer,
+            instructions,
+        });
+    }
+
+    const pendingDepositsAccount = await program.account.pendingDeposits.fetch(pendingDepositsAddress);
+    const willBeEmpty = pendingDepositsAccount.totalPendingShares.sub(shares).isZero();
+
+    instructions.push(
+        await program.methods
+            .initiateTransferableWithdrawalFromCustody(depositIndex, shares)
+            .accountsPartial({
+                withdrawer,
+                vault: vault.address,
+                pendingWithdrawals,
+                pendingDeposits: pendingDepositsAddress,
+                shareMint: deriveVaultShareMint(vault.address),
+                vaultPendingDepositsCustody: deriveVaultPendingDepositsCustody(vault.address),
+                vaultPendingWithdrawalsCustody: deriveVaultPendingWithdrawalsCustody(vault.address),
+                epochTracker: resolveEpochTracker(vault),
+                tokenProgram: TOKEN_2022_PROGRAM_ID,
+            })
+            .instruction(),
+    );
+
+    if (willBeEmpty) {
+        await withClosePendingDeposits({ program, vault, depositor: withdrawer, instructions });
+    }
+}
+
+/**
+ * Close an empty pending deposits account and reclaim rent.
+ */
+export async function withClosePendingDeposits({
+    program,
+    vault,
+    depositor,
+    receiver,
+    instructions,
+}: {
+    program: Program<GlowVault>;
+    vault: Vault;
+    depositor: PublicKey;
+    receiver?: PublicKey;
+    instructions: TransactionInstruction[];
+}) {
+    instructions.push(
+        await program.methods
+            .closePendingDeposits()
+            .accountsPartial({
+                depositor,
+                receiver: receiver ?? depositor,
+                pendingDeposits: deriveVaultPendingDeposits(vault.address, depositor),
+                vault: vault.address,
+            })
+            .instruction(),
+    );
+}
+
+/**
+ * Close an empty pending withdaawals account and reclaim rent.
+ */
+export async function withClosePendingWithdrawal({
+    program,
+    vault,
+    withdrawer,
+    receiver,
+    instructions,
+}: {
+    program: Program<GlowVault>;
+    vault: Vault;
+    withdrawer: PublicKey;
+    receiver?: PublicKey;
+    instructions: TransactionInstruction[];
+}) {
+    instructions.push(
+        await program.methods
+            .closePendingWithdrawal()
+            .accountsPartial({
+                withdrawer,
+                receiver: receiver ?? withdrawer,
+                pendingWithdrawals: deriveVaultPendingWithdrawals(vault.address, withdrawer),
+                vault: vault.address,
             })
             .instruction(),
     );

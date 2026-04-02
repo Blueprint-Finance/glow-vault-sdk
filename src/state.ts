@@ -22,7 +22,7 @@ import type { Address, Program } from '@coral-xyz/anchor';
 import type { PublicKey } from '@solana/web3.js';
 import type { GlowVault } from './idls/glow_vault';
 
-import { deriveVaultPendingDeposits, deriveVaultPendingWithdrawals, deriveVaultUser } from './pda';
+import { deriveEpochTracker, deriveVaultPendingDeposits, deriveVaultPendingWithdrawals, deriveVaultUser } from './pda';
 
 const ZERO = new BN(0);
 
@@ -60,6 +60,17 @@ export type PendingDepositsAccount = Awaited<
 export type PendingDeposits = {
     address: PublicKey;
     account: PendingDepositsAccount;
+};
+
+export type EpochTrackerAccount = Awaited<
+    ReturnType<Program<GlowVault>['account']['epochTracker']['fetch']>
+>;
+
+export type EpochSlot = EpochTrackerAccount['epochs'][number];
+
+export type EpochTracker = {
+    address: PublicKey;
+    account: EpochTrackerAccount;
 };
 
 export type VaultBalances = {
@@ -359,6 +370,30 @@ export async function fetchVaultPendingDepositsNullable(
         address,
         account,
     };
+}
+
+/**
+ * Fetch an epoch tracker account by vault address.
+ */
+export async function fetchEpochTracker(program: Program<GlowVault>, vault: Address): Promise<EpochTracker> {
+    const address = deriveEpochTracker(vault);
+    const account = await program.account.epochTracker.fetch(address);
+    return { address, account };
+}
+
+/**
+ * Fetch an epoch tracker account by vault address, returning null if missing.
+ */
+export async function fetchEpochTrackerNullable(
+    program: Program<GlowVault>,
+    vault: Address,
+): Promise<EpochTracker | null> {
+    const address = deriveEpochTracker(vault);
+    const account = await program.account.epochTracker.fetchNullable(address);
+    if (!account) {
+        return null;
+    }
+    return { address, account };
 }
 
 function convertSharesToTokens(shares: BN, exchangeRate: VaultExchangeRate | null): BN | null {

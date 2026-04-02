@@ -10,6 +10,7 @@ import {
     deriveVaultPendingDeposits,
     deriveVaultPendingDepositsCustody,
     deriveVaultPendingWithdrawalsCustody,
+    deriveEpochTracker,
 } from '../pda';
 import { findDerivedAccount } from '../utils';
 import { address as IDL_ADDRESS } from '../idls/glow_vault.json';
@@ -227,6 +228,37 @@ describe('pda', () => {
             const depositsCustody = deriveVaultPendingDepositsCustody(vault);
 
             assert.notStrictEqual(withdrawalsCustody.toBase58(), depositsCustody.toBase58());
+        });
+    });
+
+    describe('deriveEpochTracker', () => {
+        it('returns a PublicKey', () => {
+            const address = deriveEpochTracker(vault);
+
+            assert.ok(address instanceof PublicKey);
+            assert.strictEqual(address.toBase58().length, 44);
+        });
+
+        it('is deterministic for same vault', () => {
+            const a = deriveEpochTracker(vault);
+            const b = deriveEpochTracker(vault);
+
+            assert.strictEqual(a.toBase58(), b.toBase58());
+        });
+
+        it('matches manual findDerivedAccount with same seeds', () => {
+            const expected = findDerivedAccount(GLOW_VAULT_ID, 'epoch_tracker', vault);
+            const actual = deriveEpochTracker(vault);
+
+            assert.strictEqual(actual.toBase58(), expected.toBase58());
+        });
+
+        it('returns different address for different vault', () => {
+            const otherVault = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+            const a = deriveEpochTracker(vault);
+            const b = deriveEpochTracker(otherVault);
+
+            assert.notStrictEqual(a.toBase58(), b.toBase58());
         });
     });
 });
